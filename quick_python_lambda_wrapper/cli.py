@@ -45,6 +45,7 @@ def deploy(root_dir):
 
 @cli.command()
 @click.option('-d', '--dir', 'root_dir', help='Lambda root directory', default='.')
+@click.option('-v', '--version', 'version', help='Version')
 def info(root_dir, version):
     config = models.Config(root_dir)
     awsservice = models.AWSService(config)

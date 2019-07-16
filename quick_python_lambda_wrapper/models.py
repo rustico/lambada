@@ -194,7 +194,7 @@ class AWSLambda():
                 layer_name = layer_config_yaml['function_name']
 
             layer_versions = self.awsservice.get_layer_versions(layer_name)
-            if len(layer_versions) == 0:
+            if len(layer_versions['LayerVersions']) == 0:
                 raise ValueError('Layer doesn\'t have any version deployed', layer_name)
 
             layer_arn = layer_versions['LayerVersions'][0]['LayerVersionArn']
