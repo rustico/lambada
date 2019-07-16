@@ -26,6 +26,7 @@ $ tree
 ├── event.json          # Test object that will be use to call the service
 ├── README.md
 ├── requirements.txt    # Lambda dependencies
+├── event.py            # Test input file
 ├── service.py          # Handler
 ├── src
 │   └── lib.py
@@ -65,6 +66,20 @@ $ tree
 $ qlambda run [-d root directory] [-c configuration file]
 $ qlambda run
 $ qlambda run -d lambda-to-run
+```
+
+### Event test file
+You can test the lambda locally passing an event input defined in the configuration file as:
+
+```
+# path to file.property
+test_event: event.input
+```
+
+This will look for the `event.py` file in the lambda directory and get the `input` property from it.
+```
+lambda-directory$ cat event.py
+input = {'test': 'test'}
 ```
 
 #### Layers
@@ -196,6 +211,9 @@ aws_secret_access_key: a1234567789bcdergz
 # Experimental Environment variables
 environment_variables:
   DB: 'postgresql://postgres:@localhost:5432/template'
+
+# path to file.property
+test_event: event.input
 
 requirements: requirements.txt
 

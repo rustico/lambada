@@ -152,6 +152,7 @@ class AWSLambda():
         self.handler = self.config.values.get('handler')
         self.alias = self.config.values.get('alias')
         self.root_dir = self.config.values.get('root_dir')
+        self.test_event = self.config.values.get('test_event')
 
         self.directories = self.config.values.get('directories', [])
         self.files = self.config.values.get('files')
@@ -222,11 +223,24 @@ class AWSLambda():
         for key, value in self.environment_variables.items():
             os.environ[key] = value
 
-        # Load main module
+        # Load main file and test event
         sys.path.insert(0, self.root_dir)
+
+        # Load event test input
+        if self.test_event is not None:
+            test_event_properties = self.test_event.split('.')
+            test_file = test_event_properties[0]
+            test_module = importlib.import_module(test_file)
+            test_property = test_event_properties[1]
+            test_event = getattr(test_module, test_property)
+        else:
+            test_event = None
+
+        # Load main module
         main_filename = os.path.splitext(self.main_file)[0]
         module = importlib.import_module(main_filename)
-        getattr(module, self.handler)(None, None)
+
+        getattr(module, self.handler)(test_event, None)
 
 
     def build(self):
