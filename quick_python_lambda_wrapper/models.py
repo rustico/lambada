@@ -183,7 +183,11 @@ class AWSLambda():
             layer_name = layer_properties[0].strip()
 
             if (layer_name[0] == '.' or layer_name[0] == '/'):
-                layer_config_file = self.root_dir + '/' + layer_name
+                if(layer_name[0] == '.'):
+                    layer_config_file = self.root_dir + '/' + layer_name
+                else:
+                    layer_config_file = layer_name
+
                 with open(layer_config_file, 'r') as stream:
                     try:
                         layer_config_yaml = yaml.safe_load(stream)
@@ -193,20 +197,21 @@ class AWSLambda():
                 self.layers_dirs.append(os.path.dirname(layer_config_file))
                 layer_name = layer_config_yaml['function_name']
 
-            layer_versions = self.awsservice.get_layer_versions(layer_name)
-            if len(layer_versions['LayerVersions']) == 0:
-                raise ValueError('Layer doesn\'t have any version deployed', layer_name)
+            if self.awsservice is not None:
+                layer_versions = self.awsservice.get_layer_versions(layer_name)
+                if len(layer_versions['LayerVersions']) == 0:
+                    raise ValueError('Layer doesn\'t have any version deployed', layer_name)
 
-            layer_arn = layer_versions['LayerVersions'][0]['LayerVersionArn']
+                layer_arn = layer_versions['LayerVersions'][0]['LayerVersionArn']
 
-            # If there is no version specified we set the last one
-            if len(layer_properties) == 2:
-                layer_version = layer_properties[1]
-                pos = layer_arn.rfind(':')
-                layer_arn = layer_arn[:pos]
-                layer_arn += ':' + layer_version
+                # If there is no version specified we set the last one
+                if len(layer_properties) == 2:
+                    layer_version = layer_properties[1]
+                    pos = layer_arn.rfind(':')
+                    layer_arn = layer_arn[:pos]
+                    layer_arn += ':' + layer_version
 
-            self.layers.append(layer_arn)
+                self.layers.append(layer_arn)
 
     def run(self):
         # Load layers as local dependencies

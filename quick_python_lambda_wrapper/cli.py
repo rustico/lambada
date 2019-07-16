@@ -13,8 +13,7 @@ def cli():
 @click.option('-d', '--dir', 'root_dir', help='Lambda root directory', default='.')
 def run(root_dir):
     config = models.Config(root_dir)
-    awsservice = models.AWSService(config)
-    awslambda = models.AWSLambda(config, awsservice, root_dir)
+    awslambda = models.AWSLambda(config, None, root_dir)
     awslambda.run()
 
 
