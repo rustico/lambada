@@ -68,7 +68,9 @@ $ qlambda run
 $ qlambda run -d lambda-to-run
 ```
 
-### Event test file
+#### Configuration
+
+##### Event test file (optional)
 You can test the lambda locally passing an event input defined in the configuration file as:
 
 ```
@@ -82,13 +84,14 @@ lambda-directory$ cat event.py
 input = {'test': 'test'}
 ```
 
-#### Layers
-If we define a local module as a layer it will load the layer so we can call it from our lambda. We need to have the dependencies installed in our local virtual environment.
+##### Layers (optional)
+If we define a local module as a layer it will load the layer so we can call it from our lambda.
 
 ```
 layers:
   - ../common/config.yaml
 ```
+We need to have the dependencies installed in our local virtual environment.
 
 ### Build
 It will bundle all the dependencies and create a `dist` directory with the zip file.
@@ -100,6 +103,7 @@ $ qlambda build -d lambda-to-build
 ```
 
 #### Configuration
+
 ##### Requirements (optional)
 If there is a requirements file specified it will install the packages locally
 ```
@@ -142,9 +146,18 @@ region: us-east-1
 main_file: service.py
 handler: handler
 runtime: python3.6
+role: lambda_basic_execution
 
 aws_access_key_id: A123456789Z            
 aws_secret_access_key: a1234567789bcdergz
+```
+
+#### Default values
+```
+main_file: service.py
+handler: handler
+runtime: python3.6
+role: lambda_basic_execution
 ```
 
 #### Environment variables
