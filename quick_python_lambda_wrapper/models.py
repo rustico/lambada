@@ -28,7 +28,7 @@ class Config():
                 if val_type == dict:
                     key_values = self.values.get(key, {})
                     self.values[key] = {**key_values,  **val}
-                if val_type == list:
+                elif val_type == list:
                     if key in self.values:
                         self.values[key] += val
                     else:

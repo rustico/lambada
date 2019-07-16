@@ -60,9 +60,9 @@ $ tree
 
 ### Run locally
 ```
-$ qlambda run [root directory]
+$ qlambda run [-d root directory]
 $ qlambda run
-$ qlambda run lambda-to-run
+$ qlambda run -d lambda-to-run
 ```
 
 #### Layers
@@ -80,9 +80,9 @@ It will bundle all the dependencies and create a `dist` directory with the zip f
 
 
 ```
-$ qlambda build [root directory]
+$ qlambda build [-d root directory]
 $ qlambda build
-$ qlambda build lambda-to-build
+$ qlambda build -d lambda-to-build
 ```
 
 #### Configuration
@@ -113,9 +113,9 @@ It will copy the `symlink` into the bundle.
 It will create or update the Lambda and deploy the `zipfile` created in the `build` step into AWS.
 
 ```
-$ qlambda deploy [root directory]
+$ qlambda deploy [-d root directory]
 $ qlambda deploy
-$ qlambda deploy lambda-to-run
+$ qlambda deploy -d lambda-to-run
 ```
 
 ### Configuration
@@ -165,18 +165,18 @@ layers:
 It will print the lambda information
 
 ```
-$ qlambda info [root directory]
+$ qlambda info [-d root directory]
 $ qlambda info
-$ qlambda info lambda
+$ qlambda info -d lambda
 ```
 
 ## Update configuration
 It will update the lambda configuration. Useful if we did only configuration changes.
 
 ```
-$ qlambda update_config [root directory]
+$ qlambda update_config [-d root directory]
 $ qlambda update_config
-$ qlambda update_config lambda
+$ qlambda update_config -d lambda
 ```
 
 ### Configuration file example
