@@ -15,7 +15,7 @@ import boto3
 
 
 class Config():
-    def __init__(self, src, filename='config.yaml'):
+    def __init__(self, src, filename):
         lambda_config_file = os.path.join(src, filename)
         # Check if there is a parent configuration file
         if os.path.isfile(filename):

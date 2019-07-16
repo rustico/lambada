@@ -44,6 +44,8 @@ $ tree
 ```
 
 ### We can have parent-child configurations
+The configuration files needs to have the same name.
+
 ``` 
 $ tree
 
@@ -60,27 +62,24 @@ $ tree
 
 ### Run locally
 ```
-$ qlambda run [-d root directory]
+$ qlambda run [-d root directory] [-c configuration file]
 $ qlambda run
 $ qlambda run -d lambda-to-run
 ```
 
 #### Layers
-If we defined a local module as a layer it will load the layer so we can call it from our lambda. We need to have the dependencies installed in our local virtual environment.
+If we define a local module as a layer it will load the layer so we can call it from our lambda. We need to have the dependencies installed in our local virtual environment.
 
 ```
 layers:
   - ../common/config.yaml
 ```
 
-The root directory needs to have a `configuration file`.
-
 ### Build
 It will bundle all the dependencies and create a `dist` directory with the zip file.
 
-
 ```
-$ qlambda build [-d root directory]
+$ qlambda build [-d root directory] [-c configuration file]
 $ qlambda build
 $ qlambda build -d lambda-to-build
 ```
@@ -100,7 +99,7 @@ directories
 ```
 
 ##### Files (optional) (default= all files + main file - directories)
-By default it will add all the files. You can specify specific in the `files` section.
+By default it will add all the files. You can specify which ones in the `files` section.
 ```
 files:                      # Files we want to include in the root directoy 
   - config.py
@@ -113,7 +112,7 @@ It will copy the `symlink` into the bundle.
 It will create or update the Lambda and deploy the `zipfile` created in the `build` step into AWS.
 
 ```
-$ qlambda deploy [-d root directory]
+$ qlambda deploy [-d root directory] [-c configuration file]
 $ qlambda deploy
 $ qlambda deploy -d lambda-to-run
 ```
@@ -165,7 +164,7 @@ layers:
 It will print the lambda information
 
 ```
-$ qlambda info [-d root directory]
+$ qlambda info [-d root directory] [-c configuration file]
 $ qlambda info
 $ qlambda info -d lambda
 ```
@@ -174,7 +173,7 @@ $ qlambda info -d lambda
 It will update the lambda configuration. Useful if we did only configuration changes.
 
 ```
-$ qlambda update_config [-d root directory]
+$ qlambda update_config [-d root directory] [-c configuration file]
 $ qlambda update_config
 $ qlambda update_config -d lambda
 ```
@@ -222,13 +221,12 @@ layers:
 ```
 
 ## Layers
-We can also build and deploy layers.
+We can also `build`, `deploy`, `update` and get `info` on layers.
 
 ### Lambda
 We can define a layer dependency inside a lambda in two ways.
 
 We can specify the name of the layer:
-
 ```
 layers:
   - name-of-the-layer
@@ -237,6 +235,7 @@ layers:
 Or the directory of the layer config file
 ```
   - ../lib/config.yaml
+  - /home/user/lib/config.yaml
 ```
 
 In both cases it will load the Layer into the python system path variable.
@@ -251,7 +250,7 @@ layers:
 ```
 
 ### Configuration file example
-The main difference is the `is_layer` propertiy set to `true`.
+The main difference is the `is_layer` propertiy is set to `true`.
 
 ```
 function_name: layer_name

@@ -57,6 +57,8 @@ We can use multiples configuration files
 We can have parent-child configurations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+The configuration files needs to have the same name.
+
 ::
 
     $ tree
@@ -78,14 +80,14 @@ Run locally
 
 ::
 
-    $ qlambda run [root directory]
+    $ qlambda run [-d root directory] [-c configuration file]
     $ qlambda run
-    $ qlambda run lambda-to-run
+    $ qlambda run -d lambda-to-run
 
 Layers
 ^^^^^^
 
-If we defined a local module as a layer it will load the layer so we can
+If we define a local module as a layer it will load the layer so we can
 call it from our lambda. We need to have the dependencies installed in
 our local virtual environment.
 
@@ -93,8 +95,6 @@ our local virtual environment.
 
     layers:
       - ../common/config.yaml
-
-The root directory needs to have a ``configuration file``.
 
 Build
 ~~~~~
@@ -104,9 +104,9 @@ the zip file.
 
 ::
 
-    $ qlambda build [root directory]
+    $ qlambda build [-d root directory] [-c configuration file]
     $ qlambda build
-    $ qlambda build lambda-to-build
+    $ qlambda build -d lambda-to-build
 
 Configuration
 ^^^^^^^^^^^^^
@@ -135,7 +135,7 @@ By default it will add only the directories specified in the
 Files (optional) (default= all files + main file - directories)
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-By default it will add all the files. You can specify specific in the
+By default it will add all the files. You can specify which ones in the
 ``files`` section.
 
 ::
@@ -156,9 +156,9 @@ in the ``build`` step into AWS.
 
 ::
 
-    $ qlambda deploy [root directory]
+    $ qlambda deploy [-d root directory] [-c configuration file]
     $ qlambda deploy
-    $ qlambda deploy lambda-to-run
+    $ qlambda deploy -d lambda-to-run
 
 Configuration
 ~~~~~~~~~~~~~
@@ -220,9 +220,9 @@ It will print the lambda information
 
 ::
 
-    $ qlambda info [root directory]
+    $ qlambda info [-d root directory] [-c configuration file]
     $ qlambda info
-    $ qlambda info lambda
+    $ qlambda info -d lambda
 
 Update configuration
 --------------------
@@ -232,9 +232,9 @@ configuration changes.
 
 ::
 
-    $ qlambda update_config [root directory]
+    $ qlambda update_config [-d root directory] [-c configuration file]
     $ qlambda update_config
-    $ qlambda update_config lambda
+    $ qlambda update_config -d lambda
 
 Configuration file example
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -283,7 +283,8 @@ Configuration file example
 Layers
 ------
 
-We can also build and deploy layers.
+We can also ``build``, ``deploy``, ``update`` and get ``info`` on
+layers.
 
 Lambda
 ~~~~~~
@@ -302,6 +303,7 @@ Or the directory of the layer config file
 ::
 
       - ../lib/config.yaml
+      - /home/user/lib/config.yaml
 
 In both cases it will load the Layer into the python system path
 variable.
@@ -319,7 +321,7 @@ You can specify a different like this:
 Configuration file example
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The main difference is the ``is_layer`` propertiy set to ``true``.
+The main difference is the ``is_layer`` propertiy is set to ``true``.
 
 ::
 

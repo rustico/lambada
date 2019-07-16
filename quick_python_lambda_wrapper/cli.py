@@ -11,16 +11,18 @@ def cli():
 
 @cli.command()
 @click.option('-d', '--dir', 'root_dir', help='Lambda root directory', default='.')
-def run(root_dir):
-    config = models.Config(root_dir)
+@click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
+def run(root_dir, config_file):
+    config = models.Config(root_dir, config_file)
     awslambda = models.AWSLambda(config, None, root_dir)
     awslambda.run()
 
 
 @cli.command()
 @click.option('-d', '--dir', 'root_dir', help='Lambda root directory', default='.')
-def build(root_dir):
-    config = models.Config(root_dir)
+@click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
+def build(root_dir, config_file):
+    config = models.Config(root_dir, config_file)
     awsservice = models.AWSService(config)
     awslambda = models.AWSLambda(config, awsservice, root_dir)
     awslambda.build()
@@ -28,8 +30,9 @@ def build(root_dir):
 
 @cli.command()
 @click.option('-d', '--dir', 'root_dir', help='Lambda root directory', default='.')
-def deploy(root_dir):
-    config = models.Config(root_dir)
+@click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
+def deploy(root_dir, config_file):
+    config = models.Config(root_dir, config_file)
     awsservice = models.AWSService(config)
     awslambda = models.AWSLambda(config, awsservice, root_dir)
     zip_file = awslambda.build()
@@ -45,8 +48,9 @@ def deploy(root_dir):
 @cli.command()
 @click.option('-d', '--dir', 'root_dir', help='Lambda root directory', default='.')
 @click.option('-v', '--version', 'version', help='Version')
-def info(root_dir, version):
-    config = models.Config(root_dir)
+@click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
+def info(root_dir, version, config_file):
+    config = models.Config(root_dir, config_file)
     awsservice = models.AWSService(config)
     awslambda = models.AWSLambda(config, awsservice, root_dir)
     response, code_size, arn = awslambda.get_info(version)
@@ -57,8 +61,9 @@ def info(root_dir, version):
 
 @cli.command()
 @click.option('-d', '--dir', 'root_dir', help='Lambda root directory', default='.')
-def update_config(root_dir):
-    config = models.Config(root_dir)
+@click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
+def update_config(root_dir, config_file):
+    config = models.Config(root_dir, config_file)
     awsservice = models.AWSService(config)
     awslambda = models.AWSLambda(config, awsservice, root_dir)
     response = awslambda.update_function_configuration()
