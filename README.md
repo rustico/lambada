@@ -18,7 +18,7 @@ $ tree
 $ qlambda run
 ```
 
-### Invoke remotly
+### Invoke remotely
 ```
 $ qlambda invoke
 ```
@@ -62,24 +62,32 @@ $ tree
 ```
 
 ### We can have parent-child configurations
-The configuration files needs to have the same name.
+The configuration files needs to have the same name. It will build only the `requirements.txt` at the lambda directory.
 
 ``` 
 $ tree
 
 ├── config.yaml
 ├── requirements.txt
-├── lambda-test
+├── lambda-A
 │   ├── config.yaml
 │   ├── README.md
 │   ├── requirements.txt
 │   └── service.py
+├── lambda-B
+│   ├── config.yaml
+│   ├── README.md
+│   ├── requirements.txt
+│   └── service.py
+├── requirements.txt
 └── README.md
 ```
 
-We run the commands in the root directory.
+And we need to execute the commands in the parent directory and specify the directory of the lambda with `-d`.
 ```
-$ qlambda run -d lambda-generador_partidos
+$ qlambda run -d lambda-A
+$ qlambda deploy -d lambda-A -c config.prod.yaml
+$ qlambda invoke -d lambda-A -c config.prod.yaml
 ```
 
 ## How to use it

@@ -26,8 +26,8 @@ Run
 
     $ qlambda run
 
-Invoke remotly
---------------
+Invoke remotely
+---------------
 
 ::
 
