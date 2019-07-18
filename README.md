@@ -3,12 +3,8 @@
 
 A simple way to create AWS Lambda projects in Python heavily inspired and copied from https://github.com/nficano/python-lambda
 
-## First look
-
-### File structure
-We need to have a configuration file and a main file to call.
-
-#### Basic
+# Basic Usage
+A basic lambda without dependencies.
 
 ``` 
 $ tree
@@ -17,21 +13,42 @@ $ tree
 └── service.py          # Handler
 ```
 
-##### More real
-
-``` 
-$ tree
-
-├── config.yaml         # Configuration file
-├── event.json          # Test object that will be use to call the service
-├── README.md
-├── requirements.txt    # Lambda dependencies
-├── event.py            # Test input file
-├── service.py          # Handler
-├── src
-│   └── lib.py
-└── venv                # Virtualenv for local testing
+### Run
 ```
+$ qlambda run
+```
+
+### Invoke remotly
+```
+$ qlambda invoke
+```
+
+### Deploy
+```
+$ qlambda deploy 
+$ qlambda deploy -c config.qa.yaml
+$ qlambda deploy -c config.prod.yaml
+```
+
+If there is a layer associated to the lambda in the `config.yaml` without a version specified it will update it with the last one.
+
+### Update lambda configuration
+```
+$ qlambda update-config
+$ qlambda update-config -c config.qa.yaml
+$ qlambda update-config -c config.prod.yaml
+```
+If there is a layer associated to the lambda in the `config.yaml` without a version specified it will update it with the last one.
+
+### Build
+```
+$ qlambda build
+```
+It will create a zip file in the `./dist` directory
+
+
+## File structure
+We need to have a configuration file and a main file to call.
 
 ### With multiples configuration files
 ``` 
@@ -59,6 +76,12 @@ $ tree
 │   └── service.py
 └── README.md
 ```
+
+We run the commands in the root directory.
+```
+$ qlambda run -d lambda-generador_partidos
+```
+
 ## How to use it
 
 ### Run locally
