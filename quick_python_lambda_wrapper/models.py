@@ -9,6 +9,7 @@ from shutil import copystat
 from shutil import copytree
 import zipfile
 import importlib
+import json
 
 import yaml
 import boto3
@@ -139,6 +140,11 @@ class AWSService():
         client = self.get_client('lambda')
         return client.update_alias(FunctionName=function_name, Name=name, FunctionVersion=version)
 
+    def invoke(self, function_name, payload):
+        client = self.get_client('lambda')
+        return client.invoke(FunctionName=function_name, Payload=payload)
+
+
 
 class AWSLambda():
     def __init__(self, config, awsservice, src='.'):
@@ -242,6 +248,22 @@ class AWSLambda():
 
         getattr(module, self.handler)(test_event, None)
 
+    def invoke(self):
+        sys.path.insert(0, self.root_dir)
+
+        # Load event test input
+        if self.test_event is not None:
+            test_event_properties = self.test_event.split('.')
+            test_file = test_event_properties[0]
+            test_module = importlib.import_module(test_file)
+            test_property = test_event_properties[1]
+            test_event = getattr(test_module, test_property)
+        else:
+            test_event = ''
+
+
+        payload = str.encode(json.dumps(test_event))
+        return self.awsservice.invoke(self.function_name, payload)
 
     def build(self):
         temp_path = mkdtemp(prefix='aws-lambda')

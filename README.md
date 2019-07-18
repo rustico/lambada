@@ -33,7 +33,7 @@ $ tree
 └── venv                # Virtualenv for local testing
 ```
 
-### We can use multiples configuration files
+### With multiples configuration files
 ``` 
 $ tree
 
@@ -92,6 +92,13 @@ layers:
   - ../common/config.yaml
 ```
 We need to have the dependencies installed in our local virtual environment.
+
+### Invoke remotly
+```
+$ qlambda invoke [-d root directory] [-c configuration file]
+$ qlambda invoke
+$ qlambda invoke -d lambda-to-run
+```
 
 ### Build
 It will bundle all the dependencies and create a `dist` directory with the zip file.

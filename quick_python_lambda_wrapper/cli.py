@@ -21,6 +21,18 @@ def run(root_dir, config_file):
 @cli.command()
 @click.option('-d', '--dir', 'root_dir', help='Lambda root directory', default='.')
 @click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
+def invoke(root_dir, config_file):
+    config = models.Config(root_dir, config_file)
+    awsservice = models.AWSService(config)
+    awslambda = models.AWSLambda(config, awsservice, root_dir)
+    response = awslambda.invoke()
+    print(response)
+    print('Response Payload', response['Payload'].read())
+
+
+@cli.command()
+@click.option('-d', '--dir', 'root_dir', help='Lambda root directory', default='.')
+@click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
 def build(root_dir, config_file):
     config = models.Config(root_dir, config_file)
     awsservice = models.AWSService(config)
