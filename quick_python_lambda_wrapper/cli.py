@@ -4,6 +4,20 @@ import json
 from quick_python_lambda_wrapper import models
 
 
+def __get_env_vars_users(env_vars):
+    env_vars_users = {}
+    for x in env_vars:
+        if '=' not in x:
+            print('Environment variable without `=`.')
+            print('Example: qlambda -e foo=var', x)
+            exit(1)
+
+        key, value = x.split('=')
+        env_vars_users[key] = value
+
+    return env_vars_users
+
+
 @click.group()
 def cli():
     pass
@@ -12,10 +26,12 @@ def cli():
 @cli.command()
 @click.option('-d', '--dir', 'root_dir', help='Lambda root directory', default='.')
 @click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
-def run(root_dir, config_file):
+@click.option('-e', '--env', 'env_vars', multiple=True)
+def run(root_dir, config_file, env_vars):
     config = models.Config(root_dir, config_file)
     awslambda = models.AWSLambda(config, None, root_dir)
-    awslambda.run()
+    env_vars_users = __get_env_vars_users(env_vars)
+    awslambda.run(env_vars_users)
 
 
 @cli.command()

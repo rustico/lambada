@@ -124,6 +124,12 @@ layers:
 ```
 We need to have the dependencies installed in our local virtual environment.
 
+#### Environment vars
+You can pass and override environment variables in the config.yaml using the `-e` option.
+```
+$ qlambda run -e var1=value1 -e var2=value2
+```
+
 ### Invoke remotly
 ```
 $ qlambda invoke [-d root directory] [-c configuration file]

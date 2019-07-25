@@ -220,13 +220,16 @@ class AWSLambda():
 
                 self.layers.append(layer_arn)
 
-    def run(self):
+    def run(self, env_vars=[]):
         # Load layers as local dependencies
         for layer in self.layers_dirs:
             sys.path.insert(0, layer)
 
         # Load environment variables
         for key, value in self.environment_variables.items():
+            os.environ[key] = value
+
+        for key, value in env_vars.items():
             os.environ[key] = value
 
         # Load main file and test event

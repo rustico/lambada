@@ -87,7 +87,8 @@ With multiples configuration files
 We can have parent-child configurations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The configuration files needs to have the same name.
+The configuration files needs to have the same name. It will build only
+the ``requirements.txt`` at the lambda directory.
 
 ::
 
@@ -95,18 +96,27 @@ The configuration files needs to have the same name.
 
     ├── config.yaml
     ├── requirements.txt
-    ├── lambda-test
+    ├── lambda-A
     │   ├── config.yaml
     │   ├── README.md
     │   ├── requirements.txt
     │   └── service.py
+    ├── lambda-B
+    │   ├── config.yaml
+    │   ├── README.md
+    │   ├── requirements.txt
+    │   └── service.py
+    ├── requirements.txt
     └── README.md
 
-We run the commands in the root directory.
+And we need to execute the commands in the parent directory and specify
+the directory of the lambda with ``-d``.
 
 ::
 
-    $ qlambda run -d lambda-generador_partidos
+    $ qlambda run -d lambda-A
+    $ qlambda deploy -d lambda-A -c config.prod.yaml
+    $ qlambda invoke -d lambda-A -c config.prod.yaml
 
 How to use it
 -------------
@@ -155,6 +165,16 @@ call it from our lambda.
 
 We need to have the dependencies installed in our local virtual
 environment.
+
+Environment vars
+^^^^^^^^^^^^^^^^
+
+You can pass and override environment variables in the config.yaml using
+the ``-e`` option.
+
+::
+
+    $ qlambda run -e var1=value1 -e var2=value2
 
 Invoke remotly
 ~~~~~~~~~~~~~~
