@@ -249,6 +249,8 @@ class AWSLambda():
         main_filename = os.path.splitext(self.main_file)[0]
         module = importlib.import_module(main_filename)
 
+        # We move to the lambda directory
+        os.chdir(self.src)
         getattr(module, self.handler)(test_event, None)
 
     def invoke(self):
