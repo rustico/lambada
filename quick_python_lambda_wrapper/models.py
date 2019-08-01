@@ -16,8 +16,11 @@ import boto3
 
 
 class Config():
-    def __init__(self, src, filename):
-        lambda_config_file = os.path.join(src, filename)
+    def __init__(self, src, filename, lambda_filename=None):
+        if lambda_filename is None:
+            lambda_filename = filename
+
+        lambda_config_file = os.path.join(src, lambda_filename)
         # Check if there is a parent configuration file
         if os.path.isfile(filename):
             self.values = self.load_config(filename)
@@ -227,9 +230,13 @@ class AWSLambda():
 
         # Load environment variables
         for key, value in self.environment_variables.items():
+            if type(value) != str:
+                raise ValueError('Environment variable value needs to be a string', key, value)
             os.environ[key] = value
 
         for key, value in env_vars.items():
+            if type(value) != str:
+                raise ValueError('Environment variable value needs to be a string', key, value)
             os.environ[key] = value
 
         # Load main file and test event
