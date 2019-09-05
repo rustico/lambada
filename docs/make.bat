@@ -9,7 +9,7 @@ if "%SPHINXBUILD%" == "" (
 )
 set SOURCEDIR=.
 set BUILDDIR=_build
-set SPHINXPROJ=quick_python_lambda_wrapper
+set SPHINXPROJ=lambada
 
 if "%1" == "" goto help
 

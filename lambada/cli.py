@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import click
 import json
-from quick_python_lambda_wrapper import models
+from lambada import models
 
 
 def __get_env_vars_users(env_vars):

@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Tests for `quick_python_lambda_wrapper` package."""
+"""Tests for `lambada` package."""
 
 
 import unittest
 from click.testing import CliRunner
 
-from quick_python_lambda_wrapper import quick_python_lambda_wrapper
-from quick_python_lambda_wrapper import cli
+from lambada import lambada
+from lambada import cli
 
 
-class TestQuick_python_lambda_wrapper(unittest.TestCase):
-    """Tests for `quick_python_lambda_wrapper` package."""
+class TestLambada(unittest.TestCase):
+    """Tests for `lambada` package."""
 
     def setUp(self):
         """Set up test fixtures, if any."""
@@ -28,7 +28,7 @@ class TestQuick_python_lambda_wrapper(unittest.TestCase):
         runner = CliRunner()
         result = runner.invoke(cli.main)
         assert result.exit_code == 0
-        assert 'quick_python_lambda_wrapper.cli.main' in result.output
+        assert 'lambada.cli.main' in result.output
         help_result = runner.invoke(cli.main, ['--help'])
         assert help_result.exit_code == 0
         assert '--help  Show this message and exit.' in help_result.output

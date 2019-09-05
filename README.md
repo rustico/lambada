@@ -15,34 +15,34 @@ $ tree
 
 ### Run
 ```
-$ qlambda run
+$ lambada run
 ```
 
 ### Invoke remotely
 ```
-$ qlambda invoke
+$ lambada invoke
 ```
 
 ### Deploy
 ```
-$ qlambda deploy 
-$ qlambda deploy -c config.qa.yaml
-$ qlambda deploy -c config.prod.yaml
+$ lambada deploy 
+$ lambada deploy -c config.qa.yaml
+$ lambada deploy -c config.prod.yaml
 ```
 
 If there is a layer associated to the lambda in the `config.yaml` without a version specified it will update it with the last one.
 
 ### Update lambda configuration
 ```
-$ qlambda update-config
-$ qlambda update-config -c config.qa.yaml
-$ qlambda update-config -c config.prod.yaml
+$ lambada update-config
+$ lambada update-config -c config.qa.yaml
+$ lambada update-config -c config.prod.yaml
 ```
 If there is a layer associated to the lambda in the `config.yaml` without a version specified it will update it with the last one.
 
 ### Build
 ```
-$ qlambda build
+$ lambada build
 ```
 It will create a zip file in the `./dist` directory
 
@@ -85,18 +85,18 @@ $ tree
 
 And we need to execute the commands in the parent directory and specify the directory of the lambda with `-d`.
 ```
-$ qlambda run -d lambda-A
-$ qlambda deploy -d lambda-A -c config.prod.yaml
-$ qlambda invoke -d lambda-A -c config.prod.yaml
+$ lambada run -d lambda-A
+$ lambada deploy -d lambda-A -c config.prod.yaml
+$ lambada invoke -d lambda-A -c config.prod.yaml
 ```
 
 ## How to use it
 
 ### Run locally
 ```
-$ qlambda run [-d root directory] [-c configuration file]
-$ qlambda run
-$ qlambda run -d lambda-to-run
+$ lambada run [-d root directory] [-c configuration file]
+$ lambada run
+$ lambada run -d lambda-to-run
 ```
 
 #### Configuration
@@ -127,23 +127,23 @@ We need to have the dependencies installed in our local virtual environment.
 #### Environment vars
 You can pass and override environment variables in the config.yaml using the `-e` option.
 ```
-$ qlambda run -e var1=value1 -e var2=value2
+$ lambada run -e var1=value1 -e var2=value2
 ```
 
 ### Invoke remotly
 ```
-$ qlambda invoke [-d root directory] [-c configuration file]
-$ qlambda invoke
-$ qlambda invoke -d lambda-to-run
+$ lambada invoke [-d root directory] [-c configuration file]
+$ lambada invoke
+$ lambada invoke -d lambda-to-run
 ```
 
 ### Build
 It will bundle all the dependencies and create a `dist` directory with the zip file.
 
 ```
-$ qlambda build [-d root directory] [-c configuration file]
-$ qlambda build
-$ qlambda build -d lambda-to-build
+$ lambada build [-d root directory] [-c configuration file]
+$ lambada build
+$ lambada build -d lambda-to-build
 ```
 
 #### Configuration
@@ -175,9 +175,9 @@ It will copy the `symlink` into the bundle.
 It will create or update the Lambda and deploy the `zipfile` created in the `build` step into AWS.
 
 ```
-$ qlambda deploy [-d root directory] [-c configuration file]
-$ qlambda deploy
-$ qlambda deploy -d lambda-to-run
+$ lambada deploy [-d root directory] [-c configuration file]
+$ lambada deploy
+$ lambada deploy -d lambda-to-run
 ```
 
 ### Configuration
@@ -236,18 +236,18 @@ layers:
 It will print the lambda information
 
 ```
-$ qlambda info [-d root directory] [-c configuration file]
-$ qlambda info
-$ qlambda info -d lambda
+$ lambada info [-d root directory] [-c configuration file]
+$ lambada info
+$ lambada info -d lambda
 ```
 
 ## Update configuration
 It will update the lambda configuration. Useful if we did only configuration changes.
 
 ```
-$ qlambda update_config [-d root directory] [-c configuration file]
-$ qlambda update_config
-$ qlambda update_config -d lambda
+$ lambada update_config [-d root directory] [-c configuration file]
+$ lambada update_config
+$ lambada update_config -d lambda
 ```
 
 ### Configuration file example

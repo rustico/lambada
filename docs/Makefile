@@ -4,7 +4,7 @@
 # You can set these variables from the command line.
 SPHINXOPTS    =
 SPHINXBUILD   = python -msphinx
-SPHINXPROJ    = quick_python_lambda_wrapper
+SPHINXPROJ    = lambada
 SOURCEDIR     = .
 BUILDDIR      = _build
 

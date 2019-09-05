@@ -12,7 +12,7 @@ To install Quick Python Lambda Wrapper, run this command in your terminal:
 
 .. code-block:: console
 
-    $ pip install quick_python_lambda_wrapper
+    $ pip install lambada
 
 This is the preferred method to install Quick Python Lambda Wrapper, as it will always install the most recent stable release.
 
@@ -32,13 +32,13 @@ You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/rustico/quick_python_lambda_wrapper
+    $ git clone git://github.com/rustico/lambada
 
 Or download the `tarball`_:
 
 .. code-block:: console
 
-    $ curl  -OL https://github.com/rustico/quick_python_lambda_wrapper/tarball/master
+    $ curl  -OL https://github.com/rustico/lambada/tarball/master
 
 Once you have a copy of the source, you can install it with:
 
@@ -47,5 +47,5 @@ Once you have a copy of the source, you can install it with:
     $ python setup.py install
 
 
-.. _Github repo: https://github.com/rustico/quick_python_lambda_wrapper
-.. _tarball: https://github.com/rustico/quick_python_lambda_wrapper/tarball/master
+.. _Github repo: https://github.com/rustico/lambada
+.. _tarball: https://github.com/rustico/lambada/tarball/master

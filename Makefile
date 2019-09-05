@@ -51,7 +51,7 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr .pytest_cache
 
 lint: ## check style with flake8
-	flake8 quick_python_lambda_wrapper tests
+	flake8 lambada tests
 
 test: ## run tests quickly with the default Python
 	python setup.py test
@@ -60,15 +60,15 @@ test-all: ## run tests on every Python version with tox
 	tox
 
 coverage: ## check code coverage quickly with the default Python
-	coverage run --source quick_python_lambda_wrapper setup.py test
+	coverage run --source lambada setup.py test
 	coverage report -m
 	coverage html
 	$(BROWSER) htmlcov/index.html
 
 docs: ## generate Sphinx HTML documentation, including API docs
-	rm -f docs/quick_python_lambda_wrapper.rst
+	rm -f docs/lambada.rst
 	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ quick_python_lambda_wrapper
+	sphinx-apidoc -o docs/ lambada
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 	$(BROWSER) docs/_build/html/index.html
