@@ -1,0 +1,12 @@
+aws_access_key_id: access_key_id
+
+lambdas:
+  lambda-1:
+    region: us-east-1
+    main_file: service.py
+    handler: handler
+    runtime: python3.6
+    role: lambda-role
+    path: '.'
+    function_name: function name test
+    description: function description

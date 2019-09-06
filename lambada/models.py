@@ -21,29 +21,46 @@ class Config():
             lambda_filename = filename
 
         lambda_config_file = os.path.join(src, lambda_filename)
-        # Check if there is a parent configuration file
-        if os.path.isfile(filename):
-            self.values = self.load_config(filename)
+        config = self.load_config(lambda_config_file)
 
-            # If there exist one we merge the child
-            lambda_config = self.load_config(lambda_config_file)
-            for key, val in lambda_config.items():
-                val_type = type(val)
-                if val_type == dict:
-                    key_values = self.values.get(key, {})
-                    self.values[key] = {**key_values,  **val}
-                elif val_type == list:
-                    if key in self.values:
-                        self.values[key] += val
-                    else:
-                        self.values[key] = val
-                else:
-                    self.values[key] = val
-        else:
-            # If there is not we load only the child
-            self.values = self.load_config(lambda_config_file)
+        if 'aws_access_key_id' not in config or 'aws_secret_access_key' not in config:
+            raise ValueError('No aws_access_key_id or aws_secret_access_key')
 
-        self.values['root_dir'] = os.path.dirname(os.path.abspath(lambda_config_file))
+        self.credentials = {
+            'aws_access_key_id': config['aws_access_key_id'], 
+            'aws_secret_access_key': config['aws_secret_access_key']
+        }
+
+        if 'lambdas' not in config:
+            raise ValueError('No lambdas')
+
+        self.lambdas = []
+        self.errors = []
+        for lambda_name, lambda_config in config['lambdas'].items():
+            if lambda_config.get('abstract', False):
+                continue
+
+            parent = lambda_config.get('parent', None)
+            if parent is not None:
+                if parent not in config['lambdas']:
+                    raise ValueError('Parent doesn\'t exist :(')
+
+                parent_config = config['lambdas'][parent]
+                lambda_config = self.merge_config(parent_config, lambda_config)
+
+            lambda_missing_values = self.validate(lambda_config)
+            if len(lambda_missing_values) > 0:
+                self.errors.append([lambda_name, lambda_missing_values])
+            else:
+                self.lambdas.append(lambda_config)
+
+        if len(self.errors) > 0:
+            msg = ''
+            for error in self.errors:
+                error_msg = '{}: {}\n'.format(error[0], ','.join(error[1]))
+                msg += error_msg
+
+            raise ValueError(msg)
 
     def load_config(self, config_file):
         with open(config_file, 'r') as stream:
@@ -52,8 +69,31 @@ class Config():
             except yaml.YAMLError as exc:
                 print(exc)
 
-    def validate():
-        return True
+    def validate(self, lambda_config):
+        missing_values = []
+        required_values = ['region', 'main_file', 'handler', 'runtime', 'role', 'path', 'function_name', 'description']
+        for required_value in required_values:
+            if required_value not in lambda_config:
+                missing_values.append(required_value)
+
+        return missing_values
+
+    def merge_config(self, parent, child):
+        config = parent.copy()
+        for key, val in child.items():
+            val_type = type(val)
+            if val_type == dict:
+                key_values = config.get(key, {})
+                config[key] = {**key_values, **val}
+            elif val_type == list:
+                if key in config:
+                    config[key] += val
+                else:
+                    config[key] = val
+            else:
+                config[key] = val
+
+        return config
 
 class AWSService():
     def __init__(self, config):

@@ -1,34 +1,60 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-"""Tests for `lambada` package."""
-
-
 import unittest
-from click.testing import CliRunner
-
-from lambada import lambada
-from lambada import cli
+from lambada import models
 
 
-class TestLambada(unittest.TestCase):
-    """Tests for `lambada` package."""
-
+class TestLambadaConfig(unittest.TestCase):
     def setUp(self):
-        """Set up test fixtures, if any."""
+        pass
 
     def tearDown(self):
-        """Tear down test fixtures, if any."""
+        pass
 
-    def test_000_something(self):
-        """Test something."""
+    def test_load_basic_config(self):
+        # Basic with AWS credentials
+        # config.0.yaml
+        config = models.Config('./tests', 'config.0.yaml')
+        self.assertTrue('aws_access_key_id' in config.credentials)
+        self.assertTrue('aws_secret_access_key' in config.credentials)
 
-    def test_command_line_interface(self):
-        """Test the CLI."""
-        runner = CliRunner()
-        result = runner.invoke(cli.main)
-        assert result.exit_code == 0
-        assert 'lambada.cli.main' in result.output
-        help_result = runner.invoke(cli.main, ['--help'])
-        assert help_result.exit_code == 0
-        assert '--help  Show this message and exit.' in help_result.output
+    def test_load_config_without_aws_creds(self):
+        # Basic without AWS credentials raise error
+        # config.1.yaml
+        with self.assertRaises(ValueError):
+            models.Config('./tests', 'config.1.yaml')
+
+    def test_load_config_check_lambdas(self):
+        # Check the numbers of lambdas
+        # config.2.yaml
+        config = models.Config('./tests', 'config.2.yaml')
+        lambdas_total = len(config.lambdas)
+        self.assertEqual(lambdas_total, 2)
+
+    def test_load_config_check_lambda_values(self):
+        # Check some basic values
+        # config.3.yaml
+        config = models.Config('./tests', 'config.3.yaml')
+        self.assertEqual(config.lambdas[0]['function_name'], 'function name test')
+        self.assertEqual(config.lambdas[0]['description'], 'function description')
+        self.assertEqual(config.lambdas[0]['path'], '.')
+
+    def test_load_config_check_lambda_inheritance(self):
+        # Check values from parent
+        # config.4.yaml
+        config = models.Config('./tests', 'config.4.yaml')
+        self.assertEqual(config.lambdas[0]['test_event'], 'event.input_2')
+        self.assertEqual(config.lambdas[0]['environment_variables']['DB'], 'postgresql://postgres:@localhost:5432/template')
+        self.assertEqual(config.lambdas[0]['subnet_ids'][0], 'subnet-1')
+        self.assertEqual(config.lambdas[0]['subnet_ids'][1], 'subnet-2')
+        self.assertEqual(config.lambdas[0]['role'], 'lambda-role')
+
+    def test_load_config_raise_lambda_error_no_existint_parent(self):
+        # Check error when inherit from a non existent parent (like real life)
+        # config.5.yaml
+        with self.assertRaises(ValueError):
+            models.Config('./tests', 'config.5.yaml')
+
+    def test_load_config_check_lambda_required_fields(self):
+        # Check lambda required files
+        # config.6.yaml
+        with self.assertRaises(ValueError):
+            models.Config('./tests', 'config.6.yaml')
