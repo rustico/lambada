@@ -1,0 +1,21 @@
+aws_access_key_id: access_key_id_child
+aws_secret_access_key: secret_access_key_child
+parent: config.7.yaml
+
+lambdas:
+  base:
+    region: us-east-2
+
+    test_event: event.input
+
+    environment_variables:
+      DB: 'postgresql://postgres:@localhost:5432/template'
+      TEST: 'child'
+
+  lambda-test:
+    environment_variables:
+      TEST: 'child'
+
+  lambda-test-2:
+    environment_variables:
+      TEST: 'child'

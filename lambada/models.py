@@ -31,10 +31,7 @@ class Config():
             'aws_secret_access_key': config['aws_secret_access_key']
         }
 
-        if 'lambdas' not in config:
-            raise ValueError('No lambdas')
-
-        self.lambdas = []
+        self.lambdas = {}
         self.errors = []
         for lambda_name, lambda_config in config['lambdas'].items():
             if lambda_config.get('abstract', False):
@@ -52,7 +49,7 @@ class Config():
             if len(lambda_missing_values) > 0:
                 self.errors.append([lambda_name, lambda_missing_values])
             else:
-                self.lambdas.append(lambda_config)
+                self.lambdas[lambda_name] = lambda_config
 
         if len(self.errors) > 0:
             msg = ''
@@ -61,6 +58,9 @@ class Config():
                 msg += error_msg
 
             raise ValueError(msg)
+
+        self.layers = config.get('layers', {})
+
 
     def load_config(self, config_file):
         with open(config_file, 'r') as stream:

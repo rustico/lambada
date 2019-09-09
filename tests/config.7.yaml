@@ -45,3 +45,14 @@ lambdas:
 
     environment_variables:
       TEST: 'test_child'
+  
+layers:
+  common:
+    path: './layer-common'
+    requirements: requirements.txt
+    files:
+      - models.py
+
+    directories: 
+      - utils
+      - json_generators
