@@ -26,10 +26,9 @@ def cli():
 @cli.command()
 @click.option('-d', '--dir', 'root_dir', help='Lambda root directory', default='.')
 @click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
-@click.option('-cc', '--child-config', 'config_file_child', help='Use it when you have multiple configurations file for the same lambda and you want to change some properties')
-@click.option('-e', '--env', 'env_vars', multiple=True)
-def run(root_dir, config_file, env_vars, config_file_child):
-    config = models.Config(root_dir, config_file, config_file_child)
+@click.option('-e', '--env', 'env_vars')
+def run(root_dir, config_file, env_vars):
+    config = models.Config(config_file, root_dir)
     awslambda = models.AWSLambda(config, None, root_dir)
     env_vars_users = __get_env_vars_users(env_vars)
     awslambda.run(env_vars_users)
@@ -38,10 +37,10 @@ def run(root_dir, config_file, env_vars, config_file_child):
 @cli.command()
 @click.option('-d', '--dir', 'root_dir', help='Lambda root directory', default='.')
 @click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
-@click.option('-cc', '--child-config', 'config_file_child', help='Use it when you have multiple configurations file for the same lambda and you want to change some properties')
-def invoke(root_dir, config_file, config_file_child):
-    config = models.Config(root_dir, config_file, config_file_child)
+def invoke(config_file, root_dir):
+    config = models.Config(config_file, root_dir)
     awsservice = models.AWSService(config)
+    awsservice.load_role()
     awslambda = models.AWSLambda(config, awsservice, root_dir)
     response = awslambda.invoke()
     print(response)
@@ -51,10 +50,10 @@ def invoke(root_dir, config_file, config_file_child):
 @cli.command()
 @click.option('-d', '--dir', 'root_dir', help='Lambda root directory', default='.')
 @click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
-@click.option('-cc', '--child-config', 'config_file_child', help='Use it when you have multiple configurations file for the same lambda and you want to change some properties')
-def build(root_dir, config_file, config_file_child):
-    config = models.Config(root_dir, config_file, config_file_child)
+def build(config_file, root_dir):
+    config = models.Config(config_file, root_dir)
     awsservice = models.AWSService(config)
+    awsservice.load_role()
     awslambda = models.AWSLambda(config, awsservice, root_dir)
     awslambda.build()
 
@@ -62,10 +61,10 @@ def build(root_dir, config_file, config_file_child):
 @cli.command()
 @click.option('-d', '--dir', 'root_dir', help='Lambda root directory', default='.')
 @click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
-@click.option('-cc', '--child-config', 'config_file_child', help='Use it when you have multiple configurations file for the same lambda and you want to change some properties')
-def deploy(root_dir, config_file, config_file_child):
-    config = models.Config(root_dir, config_file, config_file_child)
+def deploy(root_dir, config_file):
+    config = models.Config(config_file, root_dir)
     awsservice = models.AWSService(config)
+    awsservice.load_role()
     awslambda = models.AWSLambda(config, awsservice, root_dir)
     zip_file = awslambda.build()
     response = awslambda.deploy(zip_file)
@@ -81,10 +80,10 @@ def deploy(root_dir, config_file, config_file_child):
 @click.option('-d', '--dir', 'root_dir', help='Lambda root directory', default='.')
 @click.option('-v', '--version', 'version', help='Version')
 @click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
-@click.option('-cc', '--child-config', 'config_file_child', help='Use it when you have multiple configurations file for the same lambda and you want to change some properties')
-def info(root_dir, version, config_file, config_file_child):
-    config = models.Config(root_dir, config_file, config_file_child)
+def info(root_dir, version, config_file):
+    config = models.Config(config_file, root_dir)
     awsservice = models.AWSService(config)
+    awsservice.load_role()
     awslambda = models.AWSLambda(config, awsservice, root_dir)
     response, code_size, arn = awslambda.get_info(version)
     print(json.dumps(response, indent=2, sort_keys=True))
@@ -95,10 +94,10 @@ def info(root_dir, version, config_file, config_file_child):
 @cli.command()
 @click.option('-d', '--dir', 'root_dir', help='Lambda root directory', default='.')
 @click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
-@click.option('-cc', '--child-config', 'config_file_child', help='Use it when you have multiple configurations file for the same lambda and you want to change some properties')
-def update_config(root_dir, config_file, config_file_child):
-    config = models.Config(root_dir, config_file, config_file_child)
+def update_config(config_file, root_dir):
+    config = models.Config(config_file, root_dir)
     awsservice = models.AWSService(config)
+    awsservice.load_role()
     awslambda = models.AWSLambda(config, awsservice, root_dir)
     response = awslambda.update_function_configuration()
     print(response)

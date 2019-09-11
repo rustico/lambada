@@ -16,11 +16,8 @@ import boto3
 
 
 class Config():
-    def __init__(self, src, filename, lambda_filename=None):
-        if lambda_filename is None:
-            lambda_filename = filename
-
-        lambda_config_file = os.path.join(src, lambda_filename)
+    def __init__(self, filename='config.yaml', root_dir='.'):
+        lambda_config_file = os.path.join(root_dir, filename)
         config = self.load_config(lambda_config_file)
 
         if 'aws_access_key_id' not in config or 'aws_secret_access_key' not in config:
