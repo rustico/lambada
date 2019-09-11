@@ -4,8 +4,8 @@ parent: config.7.yaml
 
 lambdas:
   base:
-    region: us-east-2
-
+    abstract: true
+    region: us-child
     test_event: event.input
 
     environment_variables:
@@ -14,8 +14,8 @@ lambdas:
 
   lambda-test:
     environment_variables:
-      TEST: 'child'
+      TEST1: 'child1'
 
   lambda-test-2:
     environment_variables:
-      TEST: 'child'
+      TEST2: 'child2'
