@@ -37,8 +37,8 @@ lambdas:
   
 layers:
   common:
-    name: elecciones-2019-common
-    description: Elecciones 2019
+    name: layer name
+    description: Layer description
     path: './layer-common'
     requirements: requirements.txt
     files:

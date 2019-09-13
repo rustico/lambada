@@ -48,12 +48,6 @@ class TestLambadaConfig(unittest.TestCase):
         with self.assertRaises(ValueError):
             models.Config('config.5.yaml', './tests')
 
-    def test_load_config_check_lambda_required_values(self):
-        # Check lambda required values
-        # config.6.yaml
-        with self.assertRaises(ValueError):
-            models.Config('config.6.yaml', './tests')
-
     def test_load_config_check_lambda_layers(self):
         # Check lambda layers
         # config.4.yaml
@@ -71,6 +65,16 @@ class TestLambadaConfig(unittest.TestCase):
 
         self.assertTrue('common' in lambda_config['layers'])
         self.assertEqual(lambda_config['layers']['common']['version'], 2)
+
+    def test_load_config_only_layers(self):
+        # Check lambda layers
+        # config.4.yaml
+        config = models.Config('config.9.yaml', './tests')
+
+        lambdas_total = len(config.lambdas.keys())
+        self.assertEqual(lambdas_total, 0)
+
+        self.assertEqual(config.layers['common']['name'], 'layer_name')
 
 
 class TestLambadaService(unittest.TestCase):

@@ -3,7 +3,6 @@ import sys
 import os.path
 from time import time
 from tempfile import mkdtemp
-from shutil import copy
 from shutil import copyfile
 from shutil import copystat
 from shutil import copytree
@@ -31,8 +30,7 @@ class Config():
         self.layers = config.get('layers', {})
         self.parents = {}
         self.lambdas = {}
-        errors = []
-        for lambda_name, lambda_config in config['lambdas'].items():
+        for lambda_name, lambda_config in config.get('lambdas', {}).items():
             if lambda_config.get('abstract', False):
                 self.parents[lambda_name] = {**self.parents.get(lambda_name, {}), **lambda_config}
                 continue
@@ -45,38 +43,23 @@ class Config():
                 parent_config = self.parents[parent_name]
                 lambda_config = self.merge_config(parent_config, lambda_config)
 
-            lambda_missing_values = self.validate(lambda_config)
-            if len(lambda_missing_values) > 0:
-                errors.append([filename + '/' + lambda_name, lambda_missing_values])
-            else:
-                layers_names = lambda_config.get('layers', [])
+            layers_names = lambda_config.get('layers', [])
 
-                lambda_config['layers'] = {}
-                for layer_name in layers_names:
-                    if ',' in layer_name:
-                        layer_name, layer_version = layer_name.split(',')
-                    else:
-                        layer_version = None
+            lambda_config['layers'] = {}
+            for layer_name in layers_names:
+                if ',' in layer_name:
+                    layer_name, layer_version = layer_name.split(',')
+                else:
+                    layer_version = None
 
-                    layer_name = layer_name.strip()
-                    layer = self.layers[layer_name]
-                    if layer_version is not None:
-                        layer['version'] = int(layer_version)
+                layer_name = layer_name.strip()
+                layer = self.layers[layer_name]
+                if layer_version is not None:
+                    layer['version'] = int(layer_version)
 
-                    lambda_config['layers'][layer_name] = layer
+                lambda_config['layers'][layer_name] = layer
 
-                self.lambdas[lambda_name] = lambda_config
-
-        if len(errors) > 0:
-            self.raise_errors(errors)
-
-    def raise_errors(self, errors):
-        msg = ''
-        for error in errors:
-            error_msg = '{}: {}\n'.format(error[0], ','.join(error[1]))
-            msg += error_msg
-
-        raise ValueError(msg)
+            self.lambdas[lambda_name] = lambda_config
 
     def load_config(self, config_file):
         with open(config_file, 'r') as stream:
@@ -84,15 +67,6 @@ class Config():
                 return yaml.safe_load(stream)
             except yaml.YAMLError as exc:
                 print(exc)
-
-    def validate(self, lambda_config):
-        missing_values = []
-        required_values = ['region', 'main_file', 'handler', 'runtime', 'role', 'path', 'function_name', 'description']
-        for required_value in required_values:
-            if required_value not in lambda_config:
-                missing_values.append(required_value)
-
-        return missing_values
 
     def merge_config(self, parent, child):
         config = parent.copy()
@@ -207,7 +181,7 @@ class AWSService():
 
 
 class AWSLambda():
-    def __init__(self, config, awsservice):
+    def __init__(self, config, awsservice, is_layer=False):
         self.config = config
         self.awsservice = awsservice
 
@@ -224,10 +198,10 @@ class AWSLambda():
         self.environment_variables = self.config.get('environment_variables', {})
         self.tags = self.config.get('tags', {})
 
-        self.is_layer = self.config.get('is_layer', False)
-        self.layer_module_name = self.config.get('layer_module_name')
-        self.layers = self.config['layers']
-        self.load_layers()
+        self.is_layer = is_layer
+        if not is_layer:
+            self.layers = self.config['layers']
+            self.load_layers()
 
         self.runtime = self.config.get('runtime', 'python3.6')
         self.requirements_filename = self.config.get('requirements')
@@ -240,6 +214,15 @@ class AWSLambda():
         self.dist_directory = self.config.get('dist_directory', 'dist')
         self.bucket_name = self.config.get('bucket_name')
         self.s3_filename = self.config.get('s3_filename')
+
+    def validate_lambda(self, lambda_config):
+        missing_values = []
+        required_values = ['region', 'main_file', 'handler', 'runtime', 'role', 'path', 'function_name', 'description']
+        for required_value in required_values:
+            if required_value not in lambda_config:
+                missing_values.append(required_value)
+
+        return missing_values
 
     def load_layers(self):
         # We need to get the Layer Arn and the last version

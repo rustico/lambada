@@ -19,15 +19,22 @@ def __get_env_vars_users(env_vars):
 
     return env_vars_users
 
+
 def __get_awslambda(name, config_file):
     config = models.Config(config_file)
-    if name not in config.lambdas:
+    if name in config.lambdas:
+        lambda_config = config.lambdas[name]
+        is_layer = False
+    elif name in config.layers:
+        lambda_config = config.layers[name]
+        is_layer = True
+    else:
         return None
 
-    lambda_config = config.lambdas[name]
     awsservice = models.AWSService(config.credentials, lambda_config)
     awsservice.load_role()
-    return models.AWSLambda(lambda_config, awsservice)
+    return models.AWSLambda(lambda_config, awsservice, is_layer)
+
 
 @click.group()
 def cli():
