@@ -28,9 +28,9 @@ class Config():
             'aws_secret_access_key': config['aws_secret_access_key']
         }
 
+        self.layers = config.get('layers', {})
         self.parents = {}
         self.lambdas = {}
-        self.layers = {}
         errors = []
         for lambda_name, lambda_config in config['lambdas'].items():
             if lambda_config.get('abstract', False):
@@ -49,12 +49,26 @@ class Config():
             if len(lambda_missing_values) > 0:
                 errors.append([filename + '/' + lambda_name, lambda_missing_values])
             else:
+                layers_names = lambda_config.get('layers', [])
+
+                lambda_config['layers'] = {}
+                for layer_name in layers_names:
+                    if ',' in layer_name:
+                        layer_name, layer_version = layer_name.split(',')
+                    else:
+                        layer_version = None
+
+                    layer_name = layer_name.strip()
+                    layer = self.layers[layer_name]
+                    if layer_version is not None:
+                        layer['version'] = int(layer_version)
+
+                    lambda_config['layers'][layer_name] = layer
+
                 self.lambdas[lambda_name] = lambda_config
 
         if len(errors) > 0:
             self.raise_errors(errors)
-
-        self.layers = {**self.layers, **config.get('layers', {})}
 
     def raise_errors(self, errors):
         msg = ''
@@ -193,17 +207,16 @@ class AWSService():
 
 
 class AWSLambda():
-    def __init__(self, config, awsservice, src='.'):
-        self.src = src
+    def __init__(self, config, awsservice):
         self.config = config
         self.awsservice = awsservice
 
+        self.src = self.config.get('path', '.')
         self.function_name = self.config.get('function_name')
         self.description = self.config.get('description', '')
         self.main_file = self.config.get('main_file')
         self.handler = self.config.get('handler')
         self.alias = self.config.get('alias')
-        self.root_dir = self.config.get('root_dir')
         self.test_event = self.config.get('test_event')
 
         self.directories = self.config.get('directories', [])
@@ -213,6 +226,7 @@ class AWSLambda():
 
         self.is_layer = self.config.get('is_layer', False)
         self.layer_module_name = self.config.get('layer_module_name')
+        self.layers = self.config['layers']
         self.load_layers()
 
         self.runtime = self.config.get('runtime', 'python3.6')
@@ -228,29 +242,10 @@ class AWSLambda():
         self.s3_filename = self.config.get('s3_filename')
 
     def load_layers(self):
-        self.layers = []
-        self.layers_dirs = []
         # We need to get the Layer Arn and the last version
-        for layer_info in self.config.layers.items():
-            layer_properties = layer_info.split(',')
-            layer_name = layer_properties[0].strip()
-
-            if (layer_name[0] == '.' or layer_name[0] == '/'):
-                if(layer_name[0] == '.'):
-                    layer_config_file = self.root_dir + '/' + layer_name
-                else:
-                    layer_config_file = layer_name
-
-                with open(layer_config_file, 'r') as stream:
-                    try:
-                        layer_config_yaml = yaml.safe_load(stream)
-                    except yaml.YAMLError as exc:
-                        print('Error in layer config file', layer_name, exc)
-
-                self.layers_dirs.append(os.path.dirname(layer_config_file))
-                layer_name = layer_config_yaml['function_name']
-
-            if self.awsservice is not None:
+        for _, layer_properties in self.layers.items():
+            if self.awsservice is not None and 'arn' not in layer_properties:
+                layer_name = layer_properties['name']
                 layer_versions = self.awsservice.get_layer_versions(layer_name)
                 if len(layer_versions['LayerVersions']) == 0:
                     raise ValueError('Layer doesn\'t have any version deployed', layer_name)
@@ -258,18 +253,18 @@ class AWSLambda():
                 layer_arn = layer_versions['LayerVersions'][0]['LayerVersionArn']
 
                 # If there is no version specified we set the last one
-                if len(layer_properties) == 2:
+                if 'version' not in layer_properties:
                     layer_version = layer_properties[1]
                     pos = layer_arn.rfind(':')
                     layer_arn = layer_arn[:pos]
                     layer_arn += ':' + layer_version
 
-                self.layers.append(layer_arn)
+                layer_properties['arn'] = layer_arn
 
     def run(self, env_vars=[]):
         # Load layers as local dependencies
-        for layer in self.layers_dirs:
-            sys.path.insert(0, layer)
+        for layer in self.layers:
+            sys.path.insert(0, layer['path'])
 
         # Load environment variables
         for key, value in self.environment_variables.items():
@@ -283,7 +278,7 @@ class AWSLambda():
             os.environ[key] = value
 
         # Load main file and test event
-        sys.path.insert(0, self.root_dir)
+        sys.path.insert(0, self.src)
 
         # Load event test input
         if self.test_event is not None:
@@ -304,7 +299,7 @@ class AWSLambda():
         getattr(module, self.handler)(test_event, None)
 
     def invoke(self):
-        sys.path.insert(0, self.root_dir)
+        sys.path.insert(0, self.src)
 
         # Load event test input
         if self.test_event is not None:
@@ -373,6 +368,10 @@ class AWSLambda():
 
     def get_function_base_options(self):
         main_filename = os.path.splitext(self.main_file)[0]
+        layers_arn = []
+        for layer_name, layer_properties in self.layers:
+            layers_arn.append(layer_properties['arn'])
+
         options = {
             'FunctionName': self.function_name,
             'Runtime': self.runtime,
@@ -385,7 +384,7 @@ class AWSLambda():
                 'SecurityGroupIds': self.security_group_ids
             },
             'Environment': {'Variables': self.environment_variables},
-            'Layers': self.layers
+            'Layers': layers_arn
         }
 
         return options

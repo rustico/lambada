@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import click
 import json
+import os
+from shutil import copy
 from lambada import models
 
 
@@ -17,6 +19,15 @@ def __get_env_vars_users(env_vars):
 
     return env_vars_users
 
+def __get_awslambda(name, config_file):
+    config = models.Config(config_file)
+    if name not in config.lambdas:
+        return None
+
+    lambda_config = config.lambdas[name]
+    awsservice = models.AWSService(config.credentials, lambda_config)
+    awsservice.load_role()
+    return models.AWSLambda(lambda_config, awsservice)
 
 @click.group()
 def cli():
@@ -24,48 +35,72 @@ def cli():
 
 
 @cli.command()
-@click.option('-d', '--dir', 'root_dir', help='Lambda root directory', default='.')
+@click.option('-n', '--name', 'name', help='Lambda name')
+def init(name):
+    templates_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), 'example',
+    )
+
+    for filename in os.listdir(templates_path):
+        dest_path = os.path.join(templates_path, filename)
+        copy(dest_path, '.')
+
+
+@cli.command()
+@click.argument('name')
 @click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
-@click.option('-e', '--env', 'env_vars')
-def run(root_dir, config_file, env_vars):
-    config = models.Config(config_file, root_dir)
-    awslambda = models.AWSLambda(config, None, root_dir)
+@click.option('-e', '--env', 'env_vars', default=[])
+def run(name, config_file, env_vars):
+    config = models.Config(config_file)
+    if name not in config.lambdas:
+        print('Error: no lambda', name, 'found in the configuration file')
+        return
+
+    lambda_config = config.lambdas[name]
+    awslambda = models.AWSLambda(lambda_config, None)
     env_vars_users = __get_env_vars_users(env_vars)
     awslambda.run(env_vars_users)
 
 
 @cli.command()
-@click.option('-d', '--dir', 'root_dir', help='Lambda root directory', default='.')
+@click.argument('name')
 @click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
-def invoke(config_file, root_dir):
-    config = models.Config(config_file, root_dir)
-    awsservice = models.AWSService(config)
-    awsservice.load_role()
-    awslambda = models.AWSLambda(config, awsservice, root_dir)
+def invoke(name, config_file):
+    awslambda = __get_awslambda(name, config_file)
+    if awslambda is None:
+        print('Error: no lambda', name, 'found in the configuration file')
+        return
+
     response = awslambda.invoke()
     print(response)
     print('Response Payload', response['Payload'].read())
 
 
 @cli.command()
-@click.option('-d', '--dir', 'root_dir', help='Lambda root directory', default='.')
+@click.argument('name')
 @click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
-def build(config_file, root_dir):
-    config = models.Config(config_file, root_dir)
-    awsservice = models.AWSService(config)
+def build(name, config_file):
+    config = models.Config(config_file)
+    if name not in config.lambdas:
+        print('Error: no lambda', name, 'found in the configuration file')
+        return
+
+    lambda_config = config.lambdas[name]
+    awsservice = models.AWSService(config.credentials, lambda_config)
     awsservice.load_role()
-    awslambda = models.AWSLambda(config, awsservice, root_dir)
+    awslambda = models.AWSLambda(lambda_config, awsservice)
     awslambda.build()
 
 
 @cli.command()
-@click.option('-d', '--dir', 'root_dir', help='Lambda root directory', default='.')
+@click.argument('name')
 @click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
-def deploy(root_dir, config_file):
-    config = models.Config(config_file, root_dir)
-    awsservice = models.AWSService(config)
-    awsservice.load_role()
-    awslambda = models.AWSLambda(config, awsservice, root_dir)
+def deploy(name, config_file):
+    awslambda = __get_awslambda(name, config_file)
+    if awslambda is None:
+        print('Error: no lambda', name, 'found in the configuration file')
+        return
+
     zip_file = awslambda.build()
     response = awslambda.deploy(zip_file)
     print(response)
@@ -77,14 +112,15 @@ def deploy(root_dir, config_file):
 
 
 @cli.command()
-@click.option('-d', '--dir', 'root_dir', help='Lambda root directory', default='.')
+@click.argument('name')
 @click.option('-v', '--version', 'version', help='Version')
 @click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
-def info(root_dir, version, config_file):
-    config = models.Config(config_file, root_dir)
-    awsservice = models.AWSService(config)
-    awsservice.load_role()
-    awslambda = models.AWSLambda(config, awsservice, root_dir)
+def info(name, version, config_file):
+    awslambda = __get_awslambda(name, config_file)
+    if awslambda is None:
+        print('Error: no lambda', name, 'found in the configuration file')
+        return
+
     response, code_size, arn = awslambda.get_info(version)
     print(json.dumps(response, indent=2, sort_keys=True))
     print('Arn', code_size)
@@ -92,13 +128,14 @@ def info(root_dir, version, config_file):
 
 
 @cli.command()
-@click.option('-d', '--dir', 'root_dir', help='Lambda root directory', default='.')
+@click.argument('name')
 @click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
-def update_config(config_file, root_dir):
-    config = models.Config(config_file, root_dir)
-    awsservice = models.AWSService(config)
-    awsservice.load_role()
-    awslambda = models.AWSLambda(config, awsservice, root_dir)
+def update_config(name, config_file):
+    awslambda = __get_awslambda(name, config_file)
+    if awslambda is None:
+        print('Error: no lambda', name, 'found in the configuration file')
+        return
+
     response = awslambda.update_function_configuration()
     print(response)
 

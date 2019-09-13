@@ -54,6 +54,24 @@ class TestLambadaConfig(unittest.TestCase):
         with self.assertRaises(ValueError):
             models.Config('config.6.yaml', './tests')
 
+    def test_load_config_check_lambda_layers(self):
+        # Check lambda layers
+        # config.4.yaml
+        config = models.Config('config.4.yaml', './tests')
+        lambda_config = config.lambdas['lambda-test']
+
+        self.assertTrue('common' in lambda_config['layers'])
+        self.assertEqual(lambda_config['layers']['common']['path'], './layer-common')
+
+    def test_load_config_check_lambda_layers_with_version(self):
+        # Check lambda layers
+        # config.4.yaml
+        config = models.Config('config.8.yaml', './tests')
+        lambda_config = config.lambdas['lambda-test']
+
+        self.assertTrue('common' in lambda_config['layers'])
+        self.assertEqual(lambda_config['layers']['common']['version'], 2)
+
 
 class TestLambadaService(unittest.TestCase):
     def test_dummy(self):
@@ -69,12 +87,12 @@ class TestLambadaService(unittest.TestCase):
 
 
 class TestLambadaLambda(unittest.TestCase):
-    def test_dummy(self):
-        return
-        config = models.Config('config.4.yaml', './tests')
+    def test_layers(self):
+        config = models.Config('config.8.yaml', './tests')
         lambda_config = config.lambdas['lambda-test']
         awsservice = models.AWSService(config.credentials, lambda_config)
         awsservice.get_account_id = MagicMock(return_value=1)
-        awsservice.get_layer_versions = MagicMock(return_value={'LayerVersions': [{'LayerVersionArn': 1}]})
+        awsservice.get_layer_versions = MagicMock(return_value={'LayerVersions': [{'LayerVersionArn': 'arn'}]})
+        awsservice.load_role()
         awslambda = models.AWSLambda(lambda_config, awsservice)
-        self.assertEqual(awslambda.function_name, 'function name test')
+        self.assertEqual(awslambda.layers['common']['path'], './layer-common')

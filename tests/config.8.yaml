@@ -29,15 +29,21 @@ lambdas:
     function_name: function name test
     description: function description
     test_event: event.input_2
+    layers:
+      - common, 2
 
     environment_variables:
       TEST: 'test_child'
+  
+layers:
+  common:
+    name: elecciones-2019-common
+    description: Elecciones 2019
+    path: './layer-common'
+    requirements: requirements.txt
+    files:
+      - models.py
 
-  lambda-test-2:
-    parent: base
-    path: './lambda-test-2'
-    function_name: function name test 2
-    description: function description
-
-    environment_variables:
-      TEST: 'test_child'
+    directories: 
+      - utils
+      - json_generators
