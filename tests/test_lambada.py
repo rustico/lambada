@@ -34,7 +34,7 @@ class TestLambadaConfig(unittest.TestCase):
 
     def test_load_config_check_lambda_inheritance(self):
         # Check values from parent
-        # config.4.yaml
+        # config.5.yaml
         config = models.Config('config.4.yaml', './tests')
         self.assertEqual(config.lambdas['lambda-test']['test_event'], 'event.input_2')
         self.assertEqual(config.lambdas['lambda-test']['environment_variables']['DB'], 'postgresql://postgres:@localhost:5432/template')
@@ -47,6 +47,16 @@ class TestLambadaConfig(unittest.TestCase):
         # config.5.yaml
         with self.assertRaises(ValueError):
             models.Config('config.5.yaml', './tests')
+
+    def test_load_config_check_lambda_inheritance_different_order(self):
+        # Check values from parent
+        # config.5.yaml
+        config = models.Config('config.10.yaml', './tests')
+        self.assertEqual(config.lambdas['lambda-test']['test_event'], 'event.input_2')
+        self.assertEqual(config.lambdas['lambda-test']['environment_variables']['DB'], 'postgresql://postgres:@localhost:5432/template')
+        self.assertEqual(config.lambdas['lambda-test']['subnet_ids'][0], 'subnet-1')
+        self.assertEqual(config.lambdas['lambda-test']['subnet_ids'][1], 'subnet-2')
+        self.assertEqual(config.lambdas['lambda-test']['role'], 'lambda-role')
 
     def test_load_config_check_lambda_layers(self):
         # Check lambda layers
