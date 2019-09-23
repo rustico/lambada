@@ -28,6 +28,11 @@ class Config():
         }
 
         self.layers = config.get('layers', {})
+        self.parents = {}
+        for lambda_name, lambda_config in config.get('lambdas', {}).items():
+            if lambda_config.get('abstract', False):
+                self.parents[lambda_name] = lambda_config
+
         self.lambdas = {}
         for lambda_name, lambda_config in config.get('lambdas', {}).items():
             if lambda_config.get('abstract', False):
@@ -35,10 +40,10 @@ class Config():
 
             parent_name = lambda_config.get('parent', None)
             if parent_name is not None:
-                if parent_name not in config['lambdas']:
-                    raise ValueError('Parent doesn\'t exist :(')
+                if parent_name not in self.parents:
+                    raise ValueError('Parent doesn\'t exist :(. Check if it has abstract: True')
 
-                parent_config = config['lambdas'][parent_name]
+                parent_config = self.parents[parent_name]
                 lambda_config = self.merge_config(parent_config, lambda_config)
 
             layers_names = lambda_config.get('layers', [])
@@ -75,6 +80,7 @@ class Config():
                 config[key] = {**key_values, **val}
             elif val_type == list:
                 if key in config:
+                    import ipdb;ipdb.set_trace()
                     config[key] += val
                 else:
                     config[key] = val
