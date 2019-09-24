@@ -1,4 +1,4 @@
-# Quick Python Lambda Wrapper
+# Lambada
 # DO NOT USE, TESTING
 
 A simple way to create AWS Lambda projects in Python heavily inspired and copied from https://github.com/nficano/python-lambda
