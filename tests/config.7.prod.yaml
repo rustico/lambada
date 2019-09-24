@@ -10,7 +10,7 @@ lambdas:
 
     environment_variables:
       DB: 'postgresql://postgres:@localhost:5432/template'
-      TEST: 'child'
+      TEST2: 'child'
 
   lambda-test:
     environment_variables:

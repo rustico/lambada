@@ -9,6 +9,7 @@ from shutil import copytree
 import zipfile
 import importlib
 import json
+import copy
 
 import yaml
 import boto3
@@ -18,6 +19,12 @@ class Config():
     def __init__(self, filename='config.yaml', root_dir='.'):
         lambda_config_file = os.path.join(root_dir, filename)
         config = self.load_config(lambda_config_file)
+
+        if 'parent' in config:
+            base_config_file = os.path.join(root_dir, config['parent'])
+            base_config = self.load_config(base_config_file)
+            self.merge_config(base_config, config)
+            config = base_config
 
         if 'aws_access_key_id' not in config or 'aws_secret_access_key' not in config:
             raise ValueError('No aws_access_key_id or aws_secret_access_key')
@@ -43,8 +50,9 @@ class Config():
                 if parent_name not in self.parents:
                     raise ValueError('Parent doesn\'t exist :(. Check if it has abstract: True')
 
-                parent_config = self.parents[parent_name]
-                lambda_config = self.merge_config(parent_config, lambda_config)
+                parent_config = copy.deepcopy(self.parents[parent_name])
+                self.merge_config(parent_config, lambda_config)
+                lambda_config = parent_config
 
             layers_names = lambda_config.get('layers', [])
 
@@ -72,22 +80,17 @@ class Config():
                 print(exc)
 
     def merge_config(self, parent, child):
-        config = parent.copy()
         for key, val in child.items():
-            val_type = type(val)
-            if val_type == dict:
-                key_values = config.get(key, {})
-                config[key] = {**key_values, **val}
-            elif val_type == list:
-                if key in config:
-                    import ipdb;ipdb.set_trace()
-                    config[key] += val
+            if isinstance(val, dict):
+                key_values = parent.get(key, {})
+                self.merge_config(key_values, val)
+            elif isinstance(val, list):
+                if key in parent:
+                    parent[key] += val
                 else:
-                    config[key] = val
+                    parent[key] = val
             else:
-                config[key] = val
-
-        return config
+                parent[key] = val
 
 
 class AWSService():

@@ -86,6 +86,28 @@ class TestLambadaConfig(unittest.TestCase):
 
         self.assertEqual(config.layers['common']['name'], 'layer_name')
 
+    def test_basic_inheritance(self):
+        # Check lambda layers
+        # config.4.yaml
+        config = models.Config('config.7.prod.yaml', './tests')
+
+        # config.7
+        # base
+        self.assertEqual(config.lambdas['lambda-test']['subnet_ids'][0], 'subnet-1')
+        self.assertEqual(config.lambdas['lambda-test']['subnet_ids'][1], 'subnet-2')
+        self.assertEqual(config.lambdas['lambda-test']['environment_variables']['TEST0'], 'base_parent')
+        self.assertEqual(config.layers['common']['path'], './layer-common')
+
+        # lambda
+        self.assertEqual(config.lambdas['lambda-test']['path'], './lambda-test')
+        self.assertEqual(config.lambdas['lambda-test']['role'], 'lambda-role')
+
+        # config.7.prod
+        self.assertEqual(config.lambdas['lambda-test']['environment_variables']['TEST'], 'test_child')
+        self.assertEqual(config.lambdas['lambda-test']['environment_variables']['TEST1'], 'child1')
+        self.assertEqual(config.lambdas['lambda-test']['environment_variables']['TEST2'], 'child')
+        self.assertEqual(config.lambdas['lambda-test-2']['environment_variables']['TEST2'], 'child2')
+
 
 class TestLambadaService(unittest.TestCase):
     def test_dummy(self):
