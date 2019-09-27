@@ -31,13 +31,14 @@ lambdas:
     test_event: event.input_2
     layers:
       - common, 2
+      - test
 
     environment_variables:
       TEST: 'test_child'
   
 layers:
   common:
-    name: layer name
+    name: layer_name_1
     description: Layer description
     path: './layer-common'
     requirements: requirements.txt
@@ -47,3 +48,8 @@ layers:
     directories: 
       - utils
       - json_generators
+
+  test:
+    name: test
+    description: Layer description
+    path: './layer-common'

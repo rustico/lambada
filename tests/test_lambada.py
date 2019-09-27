@@ -123,12 +123,17 @@ class TestLambadaService(unittest.TestCase):
 
 
 class TestLambadaLambda(unittest.TestCase):
-    def test_layers(self):
+    def test_basic_layers(self):
         config = models.Config('config.8.yaml', './tests')
         lambda_config = config.lambdas['lambda-test']
         awsservice = models.AWSService(config.credentials, lambda_config)
         awsservice.get_account_id = MagicMock(return_value=1)
-        awsservice.get_layer_versions = MagicMock(return_value={'LayerVersions': [{'LayerVersionArn': 'arn'}]})
+        awsservice.get_layer_versions = MagicMock(return_value={'LayerVersions': [{'LayerVersionArn': 'arn:1'}]})
         awsservice.load_role()
         awslambda = models.AWSLambda(lambda_config, awsservice)
+        self.assertEqual(awslambda.layers['common']['name'], 'layer_name_1')
+        self.assertEqual(awslambda.layers['common']['function_name'], 'layer_name_1')
         self.assertEqual(awslambda.layers['common']['path'], './layer-common')
+        self.assertEqual(awslambda.layers['common']['arn'], 'arn:2')
+
+        self.assertEqual(awslambda.layers['test']['arn'], 'arn:1')

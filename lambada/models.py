@@ -193,7 +193,6 @@ class AWSLambda():
         self.awsservice = awsservice
 
         self.src = self.config.get('path', '.')
-        self.function_name = self.config.get('function_name')
         self.description = self.config.get('description', '')
         self.main_file = self.config.get('main_file')
         self.handler = self.config.get('handler')
@@ -206,7 +205,10 @@ class AWSLambda():
         self.tags = self.config.get('tags', {})
 
         self.is_layer = is_layer
-        if not is_layer:
+        if is_layer:
+            self.function_name = self.config.get('name')
+        else:
+            self.function_name = self.config.get('function_name')
             self.layers = self.config['layers']
             self.load_layers()
 
@@ -242,13 +244,11 @@ class AWSLambda():
 
                 layer_arn = layer_versions['LayerVersions'][0]['LayerVersionArn']
 
-                # If there is no version specified we set the last one
-                if 'version' not in layer_properties:
-                    layer_version = layer_properties[1]
-                    pos = layer_arn.rfind(':')
-                    layer_arn = layer_arn[:pos]
-                    layer_arn += ':' + layer_version
+                if 'version' in layer_properties:
+                    layer_arn = '.'.join(layer_arn.split(':')[:-1])
+                    layer_arn += ':' + str(layer_properties['version'])
 
+                layer_properties['function_name'] = layer_name
                 layer_properties['arn'] = layer_arn
 
     def run(self, env_vars=[]):
@@ -359,7 +359,7 @@ class AWSLambda():
     def get_function_base_options(self):
         main_filename = os.path.splitext(self.main_file)[0]
         layers_arn = []
-        for layer_name, layer_properties in self.layers:
+        for layer_name, layer_properties in self.layers.items():
             layers_arn.append(layer_properties['arn'])
 
         options = {
@@ -444,8 +444,12 @@ class AWSLambda():
         pass
 
     def copy_files(self, path):
-        main_file_path = os.path.join(self.src, self.main_file)
-        files = [main_file_path]
+        if self.is_layer:
+            files = []
+        else:
+            main_file_path = os.path.join(self.src, self.main_file)
+            files = [main_file_path]
+
         for filename in os.listdir(self.src):
             filepath = os.path.join(self.src, filename)
             if os.path.isdir(filepath) and filename in self.directories:
