@@ -1,11 +1,10 @@
-# Lambada
-A simple way to create AWS Lambda projects in Python heavily inspired and copied from https://github.com/nficano/python-lambda
+# Lambada (Beta)
+A simple way to work with AWS Lambda projects in Python. Heavily inspired and copied from https://github.com/nficano/python-lambda
 
 # Installation
 ```
 $ pip install -i https://test.pypi.org/simple/ lambada
 ```
-
 
 # Basic Usage
 A basic lambda without dependencies.

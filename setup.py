@@ -40,6 +40,6 @@ setup(
     packages=find_packages(include=['lambada']),
     test_suite='tests',
     url='https://github.com/rustico/lambada',
-    version='0.2.0',
+    version='0.2.1',
     python_requires='>=3.6',
 )
