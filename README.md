@@ -1,7 +1,11 @@
 # Lambada
-# DO NOT USE, TESTING
-
 A simple way to create AWS Lambda projects in Python heavily inspired and copied from https://github.com/nficano/python-lambda
+
+# Installation
+```
+$ pip install -i https://test.pypi.org/simple/ lambada
+```
+
 
 # Basic Usage
 A basic lambda without dependencies.
