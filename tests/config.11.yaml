@@ -1,0 +1,28 @@
+aws_access_key_id: access_key_id
+aws_secret_access_key: secret_access_key
+
+lambdas:
+  base:
+    abstract: True
+    test_event: event.input_2
+    region: us-east-1
+    main_file: service.py
+    handler: handler
+    runtime: python3.6
+    role: lambda-role
+
+  lambda-test:
+    path: './lambda-test'
+    name: function name test
+    description: function description
+    region: us-east-1
+    main_file: service.py
+    handler: handler
+    runtime: python3.6
+    role: lambda-role
+
+  lambda-test-2:
+    parent: base
+    name: function name test 2
+    description: function description
+    path: './lambda-test'

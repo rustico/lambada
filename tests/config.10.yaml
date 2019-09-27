@@ -1,0 +1,48 @@
+aws_access_key_id: access_key_id
+aws_secret_access_key: secret_access_key
+
+lambdas:
+  lambda-test:
+    parent: base
+    path: './lambda-test'
+    name: function name test
+    description: function description
+    test_event: event.input_2
+    layers:
+      - common
+
+    environment_variables:
+      TEST: 'test_child'
+
+  base:
+    abstract: true
+    region: us-east-1
+    main_file: service.py
+    handler: handler
+    runtime: python3.6
+    role: lambda-role
+
+    test_event: event.input
+
+    environment_variables:
+      DB: 'postgresql://postgres:@localhost:5432/template'
+      TEST: 'test'
+
+    security_group_ids:
+      - sg-12345
+
+    subnet_ids:
+      - subnet-1
+      - subnet-2
+
+  
+layers:
+  common:
+    path: './layer-common'
+    requirements: requirements.txt
+    files:
+      - models.py
+
+    directories: 
+      - utils
+      -

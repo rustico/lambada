@@ -3,47 +3,74 @@ import sys
 import os.path
 from time import time
 from tempfile import mkdtemp
-from shutil import copy
 from shutil import copyfile
 from shutil import copystat
 from shutil import copytree
 import zipfile
 import importlib
 import json
+import copy
 
 import yaml
 import boto3
 
 
 class Config():
-    def __init__(self, src, filename, lambda_filename=None):
-        if lambda_filename is None:
-            lambda_filename = filename
+    def __init__(self, filename='config.yaml', root_dir='.'):
+        lambda_config_file = os.path.join(root_dir, filename)
+        config = self.load_config(lambda_config_file)
 
-        lambda_config_file = os.path.join(src, lambda_filename)
-        # Check if there is a parent configuration file
-        if os.path.isfile(filename):
-            self.values = self.load_config(filename)
+        if 'parent' in config:
+            base_config_file = os.path.join(root_dir, config['parent'])
+            base_config = self.load_config(base_config_file)
+            self.merge_config(base_config, config)
+            config = base_config
 
-            # If there exist one we merge the child
-            lambda_config = self.load_config(lambda_config_file)
-            for key, val in lambda_config.items():
-                val_type = type(val)
-                if val_type == dict:
-                    key_values = self.values.get(key, {})
-                    self.values[key] = {**key_values,  **val}
-                elif val_type == list:
-                    if key in self.values:
-                        self.values[key] += val
-                    else:
-                        self.values[key] = val
+        if 'aws_access_key_id' not in config or 'aws_secret_access_key' not in config:
+            raise ValueError('No aws_access_key_id or aws_secret_access_key')
+
+        self.credentials = {
+            'aws_access_key_id': config['aws_access_key_id'],
+            'aws_secret_access_key': config['aws_secret_access_key']
+        }
+
+        self.layers = config.get('layers', {})
+        self.parents = {}
+        for lambda_name, lambda_config in config.get('lambdas', {}).items():
+            if lambda_config.get('abstract', False):
+                self.parents[lambda_name] = lambda_config
+
+        self.lambdas = {}
+        for lambda_name, lambda_config in config.get('lambdas', {}).items():
+            if lambda_config.get('abstract', False):
+                continue
+
+            parent_name = lambda_config.get('parent', None)
+            if parent_name is not None:
+                if parent_name not in self.parents:
+                    raise ValueError('Parent doesn\'t exist :(. Check if it has abstract: True')
+
+                parent_config = copy.deepcopy(self.parents[parent_name])
+                self.merge_config(parent_config, lambda_config)
+                lambda_config = parent_config
+
+            layers_names = lambda_config.get('layers', [])
+
+            lambda_config['layers'] = {}
+            for layer_name in layers_names:
+                if ',' in layer_name:
+                    layer_name, layer_version = layer_name.split(',')
                 else:
-                    self.values[key] = val
-        else:
-            # If there is not we load only the child
-            self.values = self.load_config(lambda_config_file)
+                    layer_version = None
 
-        self.values['root_dir'] = os.path.dirname(os.path.abspath(lambda_config_file))
+                layer_name = layer_name.strip()
+                layer = self.layers[layer_name]
+                if layer_version is not None:
+                    layer['version'] = int(layer_version)
+
+                lambda_config['layers'][layer_name] = layer
+
+            self.lambdas[lambda_name] = lambda_config
 
     def load_config(self, config_file):
         with open(config_file, 'r') as stream:
@@ -52,27 +79,39 @@ class Config():
             except yaml.YAMLError as exc:
                 print(exc)
 
-    def validate():
-        return True
+    def merge_config(self, parent, child):
+        for key, val in child.items():
+            if isinstance(val, dict):
+                key_values = parent.get(key, {})
+                self.merge_config(key_values, val)
+            elif isinstance(val, list):
+                if key in parent:
+                    parent[key] += val
+                else:
+                    parent[key] = val
+            else:
+                parent[key] = val
+
 
 class AWSService():
-    def __init__(self, config):
+    def __init__(self, credentials, config):
         self.config = config
-        self.profile_name = self.config.values.get('profile_name')
-        self.aws_access_key_id = self.config.values.get('aws_access_key_id')
-        self.aws_secret_access_key = self.config.values.get('aws_secret_access_key')
-        self.region = self.config.values.get('region', None)
-        self.bucket_name = self.config.values.get('bucket_name')
+        self.aws_access_key_id = credentials.get('aws_access_key_id')
+        self.aws_secret_access_key = credentials.get('aws_secret_access_key')
+        self.profile_name = self.config.get('profile_name')
+        self.region = self.config.get('region', None)
+        self.bucket_name = self.config.get('bucket_name')
 
-        self.role = self.config.values.get('role', 'lambda_basic_execution')
+    def load_role(self):
+        self.role = self.config.get('role', 'lambda_basic_execution')
         self.account_id = self.get_account_id()
         self.role_name = 'arn:aws:iam::{0}:role/{1}'.format(self.account_id, self.role)
 
-    def exists_lambda(self, function_name):
+    def exists_lambda(self, name):
         client = self.get_client('lambda')
 
         try:
-            return client.get_function(FunctionName=function_name)
+            return client.get_function(FunctionName=name)
         except client.exceptions.ResourceNotFoundException as e:
             if 'Function not found' in str(e):
                 return False
@@ -117,13 +156,13 @@ class AWSService():
         client = self.get_client('lambda')
         return client.list_layer_versions(LayerName=layer_name)
 
-    def get_function(self, function_name):
+    def get_function(self, name):
         client = self.get_client('lambda')
-        return client.get_function(FunctionName=function_name)
+        return client.get_function(FunctionName=name)
 
     def get_layer_last_version(self, layer_name):
         layer_versions = self.get_layer_versions(layer_name)
-        layer_last_version = layer_versions['LayerVersions'][0]['Version']
+        layer_version = layer_versions['LayerVersions'][0]['Version']
         return layer_version
 
     def get_alias(self, function_name, name):
@@ -143,90 +182,81 @@ class AWSService():
         client = self.get_client('lambda')
         return client.update_alias(FunctionName=function_name, Name=name, FunctionVersion=version)
 
-    def invoke(self, function_name, payload):
+    def invoke(self, name, payload):
         client = self.get_client('lambda')
-        return client.invoke(FunctionName=function_name, Payload=payload)
-
+        return client.invoke(FunctionName=name, Payload=payload)
 
 
 class AWSLambda():
-    def __init__(self, config, awsservice, src='.'):
-        self.src = src
+    def __init__(self, config, awsservice, is_layer=False):
         self.config = config
         self.awsservice = awsservice
 
-        self.function_name = self.config.values.get('function_name')
-        self.description = self.config.values.get('description', '')
-        self.main_file = self.config.values.get('main_file')
-        self.handler = self.config.values.get('handler')
-        self.alias = self.config.values.get('alias')
-        self.root_dir = self.config.values.get('root_dir')
-        self.test_event = self.config.values.get('test_event')
+        self.src = self.config.get('path', '.')
+        self.description = self.config.get('description', '')
+        self.main_file = self.config.get('main_file')
+        self.handler = self.config.get('handler')
+        self.alias = self.config.get('alias')
+        self.test_event = self.config.get('test_event')
 
-        self.directories = self.config.values.get('directories', [])
-        self.files = self.config.values.get('files')
-        self.environment_variables = self.config.values.get('environment_variables', {})
-        self.tags = self.config.values.get('tags', {})
+        self.directories = self.config.get('directories', [])
+        self.files = self.config.get('files')
+        self.environment_variables = self.config.get('environment_variables', {})
+        self.tags = self.config.get('tags', {})
+        self.name = self.config.get('name')
 
-        self.is_layer = self.config.values.get('is_layer', False)
-        self.layer_module_name = self.config.values.get('layer_module_name')
-        self.load_layers()
+        self.is_layer = is_layer
+        if not is_layer:
+            self.name = self.config.get('name')
+            self.layers = self.config['layers']
+            self.load_layers()
 
-        self.runtime = self.config.values.get('runtime', 'python3.6')
-        self.requirements_filename = self.config.values.get('requirements')
-        self.timeout = self.config.values.get('timeout', 15)
-        self.memory_size = self.config.values.get('memory_size', 512)
+        self.runtime = self.config.get('runtime', 'python3.6')
+        self.requirements_filename = self.config.get('requirements')
+        self.timeout = self.config.get('timeout', 15)
+        self.memory_size = self.config.get('memory_size', 512)
 
-        self.subnet_ids = self.config.values.get('subnet_ids', [])
-        self.security_group_ids = self.config.values.get('security_group_ids', [])
+        self.subnet_ids = self.config.get('subnet_ids', [])
+        self.security_group_ids = self.config.get('security_group_ids', [])
 
-        self.dist_directory = self.config.values.get('dist_directory', 'dist')
-        self.bucket_name = self.config.values.get('bucket_name')
-        self.s3_filename = self.config.values.get('s3_filename')
+        self.dist_directory = self.config.get('dist_directory', 'dist')
+        self.bucket_name = self.config.get('bucket_name')
+        self.s3_filename = self.config.get('s3_filename')
+
+    def validate(self):
+        required_values = ['region', 'runtime', 'path', 'name', 'description']
+        if not self.is_layer:
+            required_values += ['main_file', 'handler', 'role']
+            
+        missing_values = []
+        for required_value in required_values:
+            if required_value not in self.config:
+                missing_values.append(required_value)
+
+        return missing_values
 
     def load_layers(self):
-        self.layers = []
-        self.layers_dirs = []
         # We need to get the Layer Arn and the last version
-        for layer in self.config.values.get('layers', []):
-            layer_properties = layer.split(',')
-            layer_name = layer_properties[0].strip()
-
-            if (layer_name[0] == '.' or layer_name[0] == '/'):
-                if(layer_name[0] == '.'):
-                    layer_config_file = self.root_dir + '/' + layer_name
-                else:
-                    layer_config_file = layer_name
-
-                with open(layer_config_file, 'r') as stream:
-                    try:
-                        layer_config_yaml = yaml.safe_load(stream)
-                    except yaml.YAMLError as exc:
-                        print('Error in layer config file', layer_name, exc)
-
-                self.layers_dirs.append(os.path.dirname(layer_config_file))
-                layer_name = layer_config_yaml['function_name']
-
-            if self.awsservice is not None:
+        for _, layer_properties in self.layers.items():
+            if self.awsservice is not None and 'arn' not in layer_properties:
+                layer_name = layer_properties['name']
                 layer_versions = self.awsservice.get_layer_versions(layer_name)
                 if len(layer_versions['LayerVersions']) == 0:
                     raise ValueError('Layer doesn\'t have any version deployed', layer_name)
 
                 layer_arn = layer_versions['LayerVersions'][0]['LayerVersionArn']
 
-                # If there is no version specified we set the last one
-                if len(layer_properties) == 2:
-                    layer_version = layer_properties[1]
-                    pos = layer_arn.rfind(':')
-                    layer_arn = layer_arn[:pos]
-                    layer_arn += ':' + layer_version
+                if 'version' in layer_properties:
+                    layer_arn = '.'.join(layer_arn.split(':')[:-1])
+                    layer_arn += ':' + str(layer_properties['version'])
 
-                self.layers.append(layer_arn)
+                layer_properties['name'] = layer_name
+                layer_properties['arn'] = layer_arn
 
     def run(self, env_vars=[]):
         # Load layers as local dependencies
-        for layer in self.layers_dirs:
-            sys.path.insert(0, layer)
+        for layer in self.layers:
+            sys.path.insert(0, layer['path'])
 
         # Load environment variables
         for key, value in self.environment_variables.items():
@@ -240,7 +270,7 @@ class AWSLambda():
             os.environ[key] = value
 
         # Load main file and test event
-        sys.path.insert(0, self.root_dir)
+        sys.path.insert(0, self.src)
 
         # Load event test input
         if self.test_event is not None:
@@ -261,7 +291,7 @@ class AWSLambda():
         getattr(module, self.handler)(test_event, None)
 
     def invoke(self):
-        sys.path.insert(0, self.root_dir)
+        sys.path.insert(0, self.src)
 
         # Load event test input
         if self.test_event is not None:
@@ -273,9 +303,8 @@ class AWSLambda():
         else:
             test_event = ''
 
-
         payload = str.encode(json.dumps(test_event))
-        return self.awsservice.invoke(self.function_name, payload)
+        return self.awsservice.invoke(self.name, payload)
 
     def build(self):
         temp_path = mkdtemp(prefix='aws-lambda')
@@ -288,7 +317,7 @@ class AWSLambda():
         if not os.path.exists(dist_directory):
             os.makedirs(dist_directory)
 
-        output_filename = '{0}-{1}.zip'.format(time(), self.function_name)
+        output_filename = '{0}-{1}.zip'.format(time(), self.name)
         zip_file = self.archive(temp_path, dist_directory, output_filename)
         print('zip file', zip_file)
         return zip_file
@@ -296,7 +325,7 @@ class AWSLambda():
     def deploy(self, zipfile):
         with open(zipfile, mode='rb') as f:
             zipfile = f.read()
-        
+
         if self.is_layer:
             response = self.deploy_layer(zipfile)
             print('Arn', response['LayerArn'])
@@ -307,7 +336,7 @@ class AWSLambda():
         return response
 
     def deploy_function(self, zipfile):
-        if self.awsservice.exists_lambda(self.function_name):
+        if self.awsservice.exists_lambda(self.name):
             response = self.update_function(zipfile)
         else:
             response = self.create_function(zipfile)
@@ -315,9 +344,9 @@ class AWSLambda():
         return response
 
     def deploy_layer(self, zipfile=None, via_s3=False):
-        print('publish layer', self.function_name)
+        print('publish layer', self.name)
         options = {
-            'LayerName': self.function_name,
+            'LayerName': self.name,
             'Description': self.description,
             'CompatibleRuntimes': [self.runtime]
         }
@@ -329,11 +358,14 @@ class AWSLambda():
 
         return self.awsservice.publish_layer(options)
 
-
     def get_function_base_options(self):
         main_filename = os.path.splitext(self.main_file)[0]
+        layers_arn = []
+        for layer_name, layer_properties in self.layers.items():
+            layers_arn.append(layer_properties['arn'])
+
         options = {
-            'FunctionName': self.function_name,
+            'FunctionName': self.name,
             'Runtime': self.runtime,
             'Handler': '{}.{}'.format(main_filename, self.handler),
             'Description': self.description,
@@ -344,13 +376,13 @@ class AWSLambda():
                 'SecurityGroupIds': self.security_group_ids
             },
             'Environment': {'Variables': self.environment_variables},
-            'Layers': self.layers
+            'Layers': layers_arn
         }
 
         return options
 
     def create_function(self, zipfile=None, via_s3=False):
-        print('creating new lambda', self.function_name)
+        print('creating new lambda', self.name)
         options = self.get_function_base_options()
         options['Publish'] = True
         options['Tags'] = self.tags
@@ -369,9 +401,9 @@ class AWSLambda():
         return response_configuration
 
     def update_function_code(self, zipfile=None, via_s3=False):
-        print('updating lambda code', self.function_name)
+        print('updating lambda code', self.name)
         options = {
-            'FunctionName': self.function_name,
+            'FunctionName': self.name,
             'Publish': True,
         }
 
@@ -384,7 +416,7 @@ class AWSLambda():
         return self.awsservice.update_function_code(options)
 
     def update_function_configuration(self):
-        print('updating lambda configuration', self.function_name)
+        print('updating lambda configuration', self.name)
         options = self.get_function_base_options()
         return self.awsservice.update_function_configuration(options)
 
@@ -400,11 +432,11 @@ class AWSLambda():
 
     def get_info(self, version=1):
         if self.is_layer:
-            response = self.awsservice.get_layer(self.function_name, version)
+            response = self.awsservice.get_layer(self.name, version)
             code_size = response['Content']['CodeSize']
             arn = response['LayerArn']
         else:
-            response = self.awsservice.get_function(self.function_name)
+            response = self.awsservice.get_function(self.name)
             code_size = response['Configuration']['CodeSize']
             arn = response['Configuration']['FunctionArn']
 
@@ -414,17 +446,20 @@ class AWSLambda():
         pass
 
     def copy_files(self, path):
-        main_file_path = os.path.join(self.src, self.main_file)
-        files = [main_file_path]
+        if self.is_layer:
+            files = []
+        else:
+            main_file_path = os.path.join(self.src, self.main_file)
+            files = [main_file_path]
+
         for filename in os.listdir(self.src):
             filepath = os.path.join(self.src, filename)
             if os.path.isdir(filepath) and filename in self.directories:
                 files.append(filepath)
-            elif not os.path.isdir(filepath) and self.files is None :
+            elif not os.path.isdir(filepath) and self.files is None:
                 files.append(filepath)
             elif not os.path.isdir(filepath) and self.files is not None and filename in self.files:
                 files.append(filepath)
-
 
         for f in files:
             _, filename = os.path.split(f)
@@ -455,10 +490,10 @@ class AWSLambda():
         return os.path.join(dest, filename)
 
     def create_update_alias(self, name, version):
-        alias = self.awsservice.get_alias(self.function_name, name)
+        alias = self.awsservice.get_alias(self.name, name)
         if alias is None:
-            response = self.awsservice.create_alias(self.function_name, name, version)
+            response = self.awsservice.create_alias(self.name, name, version)
         else:
-            response = self.awsservice.update_alias(self.function_name, name, version)
+            response = self.awsservice.update_alias(self.name, name, version)
 
         return response
