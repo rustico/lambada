@@ -1,5 +1,5 @@
-Quick Python Lambda Wrapper
-===========================
+Lambada
+=======
 
 DO NOT USE, TESTING
 ===================
@@ -16,31 +16,39 @@ A basic lambda without dependencies.
 
     $ tree
 
-    ├── config.yaml         # Configuration file
+    ├── config.base.yaml    # Base configuration file
+    └── config.py           # Handler
     └── service.py          # Handler
+
+Init
+----
+
+::
+
+    $ lambada init
 
 Run
 ---
 
 ::
 
-    $ qlambda run
+    $ lambada run
 
 Invoke remotely
 ---------------
 
 ::
 
-    $ qlambda invoke
+    $ lambada invoke
 
 Deploy
 ------
 
 ::
 
-    $ qlambda deploy 
-    $ qlambda deploy -c config.qa.yaml
-    $ qlambda deploy -c config.prod.yaml
+    $ lambada deploy 
+    $ lambada deploy -c config.qa.yaml
+    $ lambada deploy -c config.prod.yaml
 
 If there is a layer associated to the lambda in the ``config.yaml``
 without a version specified it will update it with the last one.
@@ -50,9 +58,9 @@ Update lambda configuration
 
 ::
 
-    $ qlambda update-config
-    $ qlambda update-config -c config.qa.yaml
-    $ qlambda update-config -c config.prod.yaml
+    $ lambada update-config
+    $ lambada update-config -c config.qa.yaml
+    $ lambada update-config -c config.prod.yaml
 
 If there is a layer associated to the lambda in the ``config.yaml``
 without a version specified it will update it with the last one.
@@ -62,7 +70,7 @@ Build
 
 ::
 
-    $ qlambda build
+    $ lambada build
 
 It will create a zip file in the ``./dist`` directory
 
@@ -94,29 +102,28 @@ the ``requirements.txt`` at the lambda directory.
 
     $ tree
 
-    ├── config.yaml
     ├── requirements.txt
     ├── lambda-A
-    │   ├── config.yaml
     │   ├── README.md
     │   ├── requirements.txt
     │   └── service.py
     ├── lambda-B
-    │   ├── config.yaml
     │   ├── README.md
     │   ├── requirements.txt
     │   └── service.py
+    ├── config.yaml
+    ├── config.prod.yaml
     ├── requirements.txt
     └── README.md
 
 And we need to execute the commands in the parent directory and specify
-the directory of the lambda with ``-d``.
+the name of the lambda with ``-n``.
 
 ::
 
-    $ qlambda run -d lambda-A
-    $ qlambda deploy -d lambda-A -c config.prod.yaml
-    $ qlambda invoke -d lambda-A -c config.prod.yaml
+    $ lambada run -n lambda-A
+    $ lambada deploy -n lambda-A -c config.prod.yaml
+    $ lambada invoke -n lambda-A -c config.prod.yaml
 
 How to use it
 -------------
@@ -126,9 +133,9 @@ Run locally
 
 ::
 
-    $ qlambda run [-d root directory] [-c configuration file]
-    $ qlambda run
-    $ qlambda run -d lambda-to-run
+    $ lambada run [-n lambda name] [-c configuration file]
+    $ lambada run
+    $ lambada run -n lambda-name
 
 Configuration
 ^^^^^^^^^^^^^
@@ -161,7 +168,7 @@ call it from our lambda.
 ::
 
     layers:
-      - ../common/config.yaml
+      - layer-name
 
 We need to have the dependencies installed in our local virtual
 environment.
@@ -174,16 +181,16 @@ the ``-e`` option.
 
 ::
 
-    $ qlambda run -e var1=value1 -e var2=value2
+    $ lambada run -e var1=value1 -e var2=value2
 
 Invoke remotly
 ~~~~~~~~~~~~~~
 
 ::
 
-    $ qlambda invoke [-d root directory] [-c configuration file]
-    $ qlambda invoke
-    $ qlambda invoke -d lambda-to-run
+    $ lambada invoke [-n lambda name] [-c configuration file]
+    $ lambada invoke
+    $ lambada invoke -n lambda-name
 
 Build
 ~~~~~
@@ -193,9 +200,9 @@ the zip file.
 
 ::
 
-    $ qlambda build [-d root directory] [-c configuration file]
-    $ qlambda build
-    $ qlambda build -d lambda-to-build
+    $ lambada build [-n lambda name] [-c configuration file]
+    $ lambada build
+    $ lambada build -n lambda-name
 
 Configuration
 ^^^^^^^^^^^^^
@@ -245,9 +252,9 @@ in the ``build`` step into AWS.
 
 ::
 
-    $ qlambda deploy [-d root directory] [-c configuration file]
-    $ qlambda deploy
-    $ qlambda deploy -d lambda-to-run
+    $ lambada deploy [-n name] [-c configuration file]
+    $ lambada deploy
+    $ lambada deploy -n name
 
 Configuration
 ~~~~~~~~~~~~~
@@ -256,7 +263,7 @@ These values are required in the configuration file
 
 ::
 
-    function_name: lambda-function-name
+    name: lambda-function-name
     description: Description
     region: us-east-1
     main_file: service.py
@@ -264,8 +271,8 @@ These values are required in the configuration file
     runtime: python3.6
     role: lambda_basic_execution
 
-    aws_access_key_id: A123456789Z            
-    aws_secret_access_key: a1234567789bcdergz
+    aws_access_key_id: access_key_id
+    aws_secret_access_key: secret_access_key
 
 Default values
 ^^^^^^^^^^^^^^
@@ -320,9 +327,9 @@ It will print the lambda information
 
 ::
 
-    $ qlambda info [-d root directory] [-c configuration file]
-    $ qlambda info
-    $ qlambda info -d lambda
+    $ lambada info [-n lambda name] [-c configuration file]
+    $ lambada info
+    $ lambada info -n lambda-name
 
 Update configuration
 --------------------
@@ -332,56 +339,69 @@ configuration changes.
 
 ::
 
-    $ qlambda update_config [-d root directory] [-c configuration file]
-    $ qlambda update_config
-    $ qlambda update_config -d lambda
+    $ lambada update_config [-n lambda name] [-c configuration file]
+    $ lambada update_config
+    $ lambada update_config -n lambda-name
 
 Configuration file example
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ::
 
-    $ cat config.yaml
-    function_name: lambda-function-name
-    description: Description
-    region: us-east-1
-    main_file: service.py       # Main file
-    handler: handler            # Main method
-    runtime: python3.6
-    is_layer: false             # Default is False
+    $ cat config.base.yaml
+    lambdas:
+      base:
+        abstract: True
+        region: us-east-1
+        runtime: python3.6
+        role: lambda-role
+        main_file: service.py
+        handler: handler
+        # path to file.property
+        test_event: event.input
 
-    # Credentials we need for deploying the Lambda
-    aws_access_key_id: A123456789Z            
-    aws_secret_access_key: a1234567789bcdergz
+        security_group_ids:
+          - sg-12345
 
-    # Experimental Environment variables
-    environment_variables:
-      DB: 'postgresql://postgres:@localhost:5432/template'
+        subnet_ids:
+          - subnet-1
+          - subnet-2
 
-    # path to file.property
-    test_event: event.input
+      lambda-test:
+        parent: base
+        name: function name test
+        description: function description
+        path: './lambda-test'
 
-    requirements: requirements.txt
+        environment_variables:
+          DB: 'postgresql://postgres:@localhost:5432/template'
+          TEST: 'test'
 
-    security_group_ids:
-      - sg-123456789
+        directories                 # Directories we want to deploy
+          - src
 
-    subnet_ids:
-      - subnet-a123456789
-      - subnet-b123456789
+        files:                      # Files we want to include that are in the root directoy 
+          - config.py
 
-    alias: dev
+        # We can specify a local layer or a remote layer
+        layers:
+          - layer-1
 
-    directories                 # Directories we want to deploy
-      - src
-
-    files:                      # Files we want to include that are in the root directoy 
-      - config.py
-
-    # We can specify a local layer or a remote layer
     layers:
-      - ../lib/config.yaml
-      - name-of-the-layer
+      layer-1:
+        name: layer-1
+        runtime: python3.6
+        description: Layer-1
+        requirements: requirements.txt
+        path: layer
+
+::
+
+    $ cat config.yaml
+    aws_access_key_id: access_key_id
+    aws_secret_access_key: secret_access_key
+
+    parent: config.base.yaml
 
 Layers
 ------
@@ -401,16 +421,6 @@ We can specify the name of the layer:
     layers:
       - name-of-the-layer
 
-Or the directory of the layer config file
-
-::
-
-      - ../lib/config.yaml
-      - /home/user/lib/config.yaml
-
-In both cases it will load the Layer into the python system path
-variable.
-
 By default it will set up the last version of the layer.
 
 You can specify a different like this:
@@ -418,8 +428,7 @@ You can specify a different like this:
 ::
 
     layers:
-      - name-of-the-layer,1
-      - ../lib/config.yaml,1
+      - name-of-the-layer,3
 
 Configuration file example
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -428,7 +437,7 @@ The main difference is the ``is_layer`` propertiy is set to ``true``.
 
 ::
 
-    function_name: layer_name
+    name: layer_name
     description: Description
     is_layer: true
     region: us-east-1
@@ -443,5 +452,5 @@ The main difference is the ``is_layer`` propertiy is set to ``true``.
     directories: 
       - lib
 
-    aws_access_key_id: A123456789Z            
-    aws_secret_access_key: a1234567789bcdergz
+    aws_access_key_id: access_key_id
+    aws_secret_access_key: secret_access_key
