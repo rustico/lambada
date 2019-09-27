@@ -9,5 +9,5 @@ lambdas:
     runtime: python3.6
     role: lambda-role
     path: '.'
-    function_name: function name test
+    name: function name test
     description: function description

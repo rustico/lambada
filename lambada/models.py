@@ -107,11 +107,11 @@ class AWSService():
         self.account_id = self.get_account_id()
         self.role_name = 'arn:aws:iam::{0}:role/{1}'.format(self.account_id, self.role)
 
-    def exists_lambda(self, function_name):
+    def exists_lambda(self, name):
         client = self.get_client('lambda')
 
         try:
-            return client.get_function(FunctionName=function_name)
+            return client.get_function(FunctionName=name)
         except client.exceptions.ResourceNotFoundException as e:
             if 'Function not found' in str(e):
                 return False
@@ -156,9 +156,9 @@ class AWSService():
         client = self.get_client('lambda')
         return client.list_layer_versions(LayerName=layer_name)
 
-    def get_function(self, function_name):
+    def get_function(self, name):
         client = self.get_client('lambda')
-        return client.get_function(FunctionName=function_name)
+        return client.get_function(FunctionName=name)
 
     def get_layer_last_version(self, layer_name):
         layer_versions = self.get_layer_versions(layer_name)
@@ -182,9 +182,9 @@ class AWSService():
         client = self.get_client('lambda')
         return client.update_alias(FunctionName=function_name, Name=name, FunctionVersion=version)
 
-    def invoke(self, function_name, payload):
+    def invoke(self, name, payload):
         client = self.get_client('lambda')
-        return client.invoke(FunctionName=function_name, Payload=payload)
+        return client.invoke(FunctionName=name, Payload=payload)
 
 
 class AWSLambda():
@@ -203,12 +203,11 @@ class AWSLambda():
         self.files = self.config.get('files')
         self.environment_variables = self.config.get('environment_variables', {})
         self.tags = self.config.get('tags', {})
+        self.name = self.config.get('name')
 
         self.is_layer = is_layer
-        if is_layer:
-            self.function_name = self.config.get('name')
-        else:
-            self.function_name = self.config.get('function_name')
+        if not is_layer:
+            self.name = self.config.get('name')
             self.layers = self.config['layers']
             self.load_layers()
 
@@ -224,11 +223,14 @@ class AWSLambda():
         self.bucket_name = self.config.get('bucket_name')
         self.s3_filename = self.config.get('s3_filename')
 
-    def validate_lambda(self, lambda_config):
+    def validate(self):
+        required_values = ['region', 'runtime', 'path', 'name', 'description']
+        if not self.is_layer:
+            required_values += ['main_file', 'handler', 'role']
+            
         missing_values = []
-        required_values = ['region', 'main_file', 'handler', 'runtime', 'role', 'path', 'function_name', 'description']
         for required_value in required_values:
-            if required_value not in lambda_config:
+            if required_value not in self.config:
                 missing_values.append(required_value)
 
         return missing_values
@@ -248,7 +250,7 @@ class AWSLambda():
                     layer_arn = '.'.join(layer_arn.split(':')[:-1])
                     layer_arn += ':' + str(layer_properties['version'])
 
-                layer_properties['function_name'] = layer_name
+                layer_properties['name'] = layer_name
                 layer_properties['arn'] = layer_arn
 
     def run(self, env_vars=[]):
@@ -302,7 +304,7 @@ class AWSLambda():
             test_event = ''
 
         payload = str.encode(json.dumps(test_event))
-        return self.awsservice.invoke(self.function_name, payload)
+        return self.awsservice.invoke(self.name, payload)
 
     def build(self):
         temp_path = mkdtemp(prefix='aws-lambda')
@@ -315,7 +317,7 @@ class AWSLambda():
         if not os.path.exists(dist_directory):
             os.makedirs(dist_directory)
 
-        output_filename = '{0}-{1}.zip'.format(time(), self.function_name)
+        output_filename = '{0}-{1}.zip'.format(time(), self.name)
         zip_file = self.archive(temp_path, dist_directory, output_filename)
         print('zip file', zip_file)
         return zip_file
@@ -334,7 +336,7 @@ class AWSLambda():
         return response
 
     def deploy_function(self, zipfile):
-        if self.awsservice.exists_lambda(self.function_name):
+        if self.awsservice.exists_lambda(self.name):
             response = self.update_function(zipfile)
         else:
             response = self.create_function(zipfile)
@@ -342,9 +344,9 @@ class AWSLambda():
         return response
 
     def deploy_layer(self, zipfile=None, via_s3=False):
-        print('publish layer', self.function_name)
+        print('publish layer', self.name)
         options = {
-            'LayerName': self.function_name,
+            'LayerName': self.name,
             'Description': self.description,
             'CompatibleRuntimes': [self.runtime]
         }
@@ -363,7 +365,7 @@ class AWSLambda():
             layers_arn.append(layer_properties['arn'])
 
         options = {
-            'FunctionName': self.function_name,
+            'FunctionName': self.name,
             'Runtime': self.runtime,
             'Handler': '{}.{}'.format(main_filename, self.handler),
             'Description': self.description,
@@ -380,7 +382,7 @@ class AWSLambda():
         return options
 
     def create_function(self, zipfile=None, via_s3=False):
-        print('creating new lambda', self.function_name)
+        print('creating new lambda', self.name)
         options = self.get_function_base_options()
         options['Publish'] = True
         options['Tags'] = self.tags
@@ -399,9 +401,9 @@ class AWSLambda():
         return response_configuration
 
     def update_function_code(self, zipfile=None, via_s3=False):
-        print('updating lambda code', self.function_name)
+        print('updating lambda code', self.name)
         options = {
-            'FunctionName': self.function_name,
+            'FunctionName': self.name,
             'Publish': True,
         }
 
@@ -414,7 +416,7 @@ class AWSLambda():
         return self.awsservice.update_function_code(options)
 
     def update_function_configuration(self):
-        print('updating lambda configuration', self.function_name)
+        print('updating lambda configuration', self.name)
         options = self.get_function_base_options()
         return self.awsservice.update_function_configuration(options)
 
@@ -430,11 +432,11 @@ class AWSLambda():
 
     def get_info(self, version=1):
         if self.is_layer:
-            response = self.awsservice.get_layer(self.function_name, version)
+            response = self.awsservice.get_layer(self.name, version)
             code_size = response['Content']['CodeSize']
             arn = response['LayerArn']
         else:
-            response = self.awsservice.get_function(self.function_name)
+            response = self.awsservice.get_function(self.name)
             code_size = response['Configuration']['CodeSize']
             arn = response['Configuration']['FunctionArn']
 
@@ -488,10 +490,10 @@ class AWSLambda():
         return os.path.join(dest, filename)
 
     def create_update_alias(self, name, version):
-        alias = self.awsservice.get_alias(self.function_name, name)
+        alias = self.awsservice.get_alias(self.name, name)
         if alias is None:
-            response = self.awsservice.create_alias(self.function_name, name, version)
+            response = self.awsservice.create_alias(self.name, name, version)
         else:
-            response = self.awsservice.update_alias(self.function_name, name, version)
+            response = self.awsservice.update_alias(self.name, name, version)
 
         return response

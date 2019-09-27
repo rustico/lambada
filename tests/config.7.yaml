@@ -28,7 +28,7 @@ lambdas:
   lambda-test:
     parent: base
     path: './lambda-test'
-    function_name: function name test
+    name: function name test
     description: function description
     test_event: event.input_2
     layers:
@@ -40,7 +40,7 @@ lambdas:
   lambda-test-2:
     parent: base
     path: './lambda-test-2'
-    function_name: function name test 2
+    name: function name test 2
     description: function description
     layers:
       - common

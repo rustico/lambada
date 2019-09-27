@@ -20,6 +20,11 @@ def __get_env_vars_users(env_vars):
     return env_vars_users
 
 
+def _validate_lambda(awslambda):
+    missing_values = awslambda.validate()
+    import ipdb;ipdb.set_trace()
+
+
 def __get_awslambda(name, config_file):
     config = models.Config(config_file)
     if name in config.lambdas:
@@ -33,7 +38,9 @@ def __get_awslambda(name, config_file):
 
     awsservice = models.AWSService(config.credentials, lambda_config)
     awsservice.load_role()
-    return models.AWSLambda(lambda_config, awsservice, is_layer)
+    awslambda = models.AWSLambda(lambda_config, awsservice, is_layer)
+    _validate_lambda(awslambda)
+    return awslambda
 
 
 @click.group()

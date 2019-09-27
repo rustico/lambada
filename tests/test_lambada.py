@@ -28,7 +28,7 @@ class TestLambadaConfig(unittest.TestCase):
         # Check some basic values
         # config.3.yaml
         config = models.Config('config.3.yaml', './tests')
-        self.assertEqual(config.lambdas['lambda-1']['function_name'], 'function name test')
+        self.assertEqual(config.lambdas['lambda-1']['name'], 'function name test')
         self.assertEqual(config.lambdas['lambda-1']['description'], 'function description')
         self.assertEqual(config.lambdas['lambda-1']['path'], '.')
 
@@ -123,6 +123,14 @@ class TestLambadaService(unittest.TestCase):
 
 
 class TestLambadaLambda(unittest.TestCase):
+    def _get_lambda(self, config, lambda_config):
+        awsservice = models.AWSService(config.credentials, lambda_config)
+        awsservice.get_account_id = MagicMock(return_value=1)
+        awsservice.get_layer_versions = MagicMock(return_value={'LayerVersions': [{'LayerVersionArn': 'arn:1'}]})
+        awsservice.load_role()
+        awslambda = models.AWSLambda(lambda_config, awsservice)
+        return awslambda
+
     def test_basic_layers(self):
         config = models.Config('config.8.yaml', './tests')
         lambda_config = config.lambdas['lambda-test']
@@ -131,9 +139,41 @@ class TestLambadaLambda(unittest.TestCase):
         awsservice.get_layer_versions = MagicMock(return_value={'LayerVersions': [{'LayerVersionArn': 'arn:1'}]})
         awsservice.load_role()
         awslambda = models.AWSLambda(lambda_config, awsservice)
+        self.assertEqual(awslambda.name, 'function name test')
         self.assertEqual(awslambda.layers['common']['name'], 'layer_name_1')
-        self.assertEqual(awslambda.layers['common']['function_name'], 'layer_name_1')
+        self.assertEqual(awslambda.layers['common']['name'], 'layer_name_1')
         self.assertEqual(awslambda.layers['common']['path'], './layer-common')
         self.assertEqual(awslambda.layers['common']['arn'], 'arn:2')
-
         self.assertEqual(awslambda.layers['test']['arn'], 'arn:1')
+
+    def test_validate_valid_lambda(self):
+        config = models.Config('config.11.yaml', './tests')
+
+        # Lambda-test
+        lambda_config = config.lambdas['lambda-test']
+        awslambda = self._get_lambda(config, lambda_config)
+        missing_values = awslambda.validate()
+        self.assertEqual(len(missing_values), 0)
+
+        # Lambda-test-2 with parent
+        lambda_config_2 = config.lambdas['lambda-test-2']
+        awslambda_2 = self._get_lambda(config, lambda_config_2)
+        self.assertEqual(awslambda_2.name, 'function name test 2')
+        missing_values = awslambda_2.validate()
+        self.assertEqual(len(missing_values), 0)
+
+    def test_validate_invalid_lambda(self):
+        config = models.Config('config.12.yaml', './tests')
+
+        # Lambda-test
+        lambda_config = config.lambdas['lambda-test']
+        awslambda = self._get_lambda(config, lambda_config)
+        missing_values = awslambda.validate()
+        self.assertEqual(len(missing_values), 5)
+
+        # Lambda-test-2 with parent
+        lambda_config_2 = config.lambdas['lambda-test-2']
+        awslambda_2 = self._get_lambda(config, lambda_config_2)
+        self.assertEqual(awslambda_2.name, 'function name test 2')
+        missing_values = awslambda_2.validate()
+        self.assertEqual(len(missing_values), 3)
