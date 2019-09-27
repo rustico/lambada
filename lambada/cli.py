@@ -20,11 +20,6 @@ def __get_env_vars_users(env_vars):
     return env_vars_users
 
 
-def _validate_lambda(awslambda):
-    missing_values = awslambda.validate()
-    import ipdb;ipdb.set_trace()
-
-
 def __get_awslambda(name, config_file):
     config = models.Config(config_file)
     if name in config.lambdas:
@@ -39,8 +34,12 @@ def __get_awslambda(name, config_file):
     awsservice = models.AWSService(config.credentials, lambda_config)
     awsservice.load_role()
     awslambda = models.AWSLambda(lambda_config, awsservice, is_layer)
-    _validate_lambda(awslambda)
-    return awslambda
+    missing_values = awslambda.validate()
+    if len(missing_values) == 0:
+        return awslambda
+    
+    print('Missing required missing fields:', *missing_values)
+    exit(1)
 
 
 @click.group()
@@ -72,6 +71,14 @@ def run(name, config_file, env_vars):
 
     lambda_config = config.lambdas[name]
     awslambda = models.AWSLambda(lambda_config, None)
+
+    missing_values = awslambda.validate()
+    if len(missing_values) == 0:
+        return awslambda
+    
+    print('Missing required missing fields:', *missing_values)
+    exit(1)
+
     env_vars_users = __get_env_vars_users(env_vars)
     awslambda.run(env_vars_users)
 
