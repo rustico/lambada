@@ -1,29 +1,4 @@
 aws_access_key_id: access_key_id
 aws_secret_access_key: secret_access_key
 
-lambdas:
-  base:
-    abstract: True
-
-  lambda-test:
-    parent: base
-    function_name: function name test
-    description: function description
-    path: '.'
-    region: us-east-1
-    main_file: service.py
-    handler: handler
-    runtime: python3.6
-    role: lambda-role
-    test_event: event.input
-
-    security_group_ids:
-      - sg-12345
-
-    subnet_ids:
-      - subnet-1
-      - subnet-2
-
-    environment_variables:
-      DB: 'postgresql://postgres:@localhost:5432/template'
-      TEST: 'test'
+parent: config.base.yaml

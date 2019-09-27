@@ -1,0 +1,26 @@
+lambdas:
+  base:
+    abstract: True
+    region: us-east-1
+    runtime: python3.6
+    role: lambda-role
+    main_file: service.py
+    handler: handler
+
+    security_group_ids:
+      - sg-12345
+
+    subnet_ids:
+      - subnet-1
+      - subnet-2
+
+  lambda-test:
+    parent: base
+    name: function name test
+    description: function description
+    path: '.'
+
+
+    environment_variables:
+      DB: 'postgresql://postgres:@localhost:5432/template'
+      TEST: 'test'
