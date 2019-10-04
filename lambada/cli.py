@@ -94,6 +94,7 @@ def run(name, config_file, env_vars):
 
 @cli.command()
 @click.argument('name')
+@click.option('-n', '--name', default='', help='Lambda name')
 @click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
 def invoke(name, config_file):
     awslambda = __get_awslambda(name, config_file)
@@ -119,13 +120,34 @@ def build(name, config_file):
 
 
 @cli.command()
-@click.argument('name')
+@click.option('-n', '--name', default=None, help='Lambda name')
 @click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
 def deploy(name, config_file):
-    awslambda = __get_awslambda(name, config_file)
-    zip_file = awslambda.build()
-    response = awslambda.deploy(zip_file)
-    print(response)
+    if name is None:
+        config = models.Config(config_file)
+        deployed = []
+        for lambda_name in config.lambdas.keys():
+            print(lambda_name)
+            awslambda = __get_awslambda(lambda_name, config_file)
+            zip_file = awslambda.build()
+            response = awslambda.deploy(zip_file)
+            print(response)
+            deployed.append(lambda_name)
+
+        for layer_name in config.layers.keys():
+            print(layer_name)
+            awslambda = __get_awslambda(layer_name, config_file)
+            zip_file = awslambda.build()
+            response = awslambda.deploy(zip_file)
+            print(response)
+            deployed.append(layer_name)
+
+        print('Deployed', deployed)
+    else:
+        awslambda = __get_awslambda(name, config_file)
+        zip_file = awslambda.build()
+        response = awslambda.deploy(zip_file)
+        print(response)
 
     if not awslambda.is_layer and awslambda.alias is not None:
         version = response['Version']

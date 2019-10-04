@@ -24,17 +24,20 @@ $ lambada init
 
 ### Run
 ```
-$ lambada run
+$ lambada run 
+$ lambada run  -n lambda-name
 ```
 
 ### Invoke remotely
 ```
 $ lambada invoke
+$ lambada invoke -n lambda-name
 ```
 
-### Deploy
+### Deploy lambdas and layers
 ```
-$ lambada deploy 
+$ lambada deploy (deploys all)
+$ lambada deploy -n name
 $ lambada deploy -c config.qa.yaml
 $ lambada deploy -c config.prod.yaml
 ```
@@ -181,11 +184,23 @@ It will copy the `symlink` into the bundle.
 
 ### Deploy
 It will create or update the Lambda and deploy the `zipfile` created in the `build` step into AWS.
-
 ```
 $ lambada deploy [-n name] [-c configuration file]
+```
+
+Deploy all
+```
 $ lambada deploy
+```
+
+Deploy one lambda/layer
+```
 $ lambada deploy -n name
+```
+
+Choose configuration file
+```
+$ lambada deploy -c config.file.yaml
 ```
 
 ### Configuration

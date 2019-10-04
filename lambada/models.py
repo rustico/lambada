@@ -227,7 +227,7 @@ class AWSLambda():
         required_values = ['region', 'runtime', 'path', 'name', 'description']
         if not self.is_layer:
             required_values += ['main_file', 'handler', 'role']
-            
+
         missing_values = []
         for required_value in required_values:
             if required_value not in self.config:
@@ -255,7 +255,7 @@ class AWSLambda():
 
     def run(self, env_vars=[]):
         # Load layers as local dependencies
-        for layer in self.layers:
+        for layer_name, layer in self.layers.items():
             sys.path.insert(0, layer['path'])
 
         # Load environment variables
@@ -426,9 +426,9 @@ class AWSLambda():
 
         requirements = os.path.join(self.src, self.requirements_filename)
         if not os.path.exists(requirements):
-            sys.exit('requirements file doesn\'t exists')
-
-        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', requirements, '-t', path, '--ignore-installed'])
+            print('Warning: requirements file doesn\'t exists', requirements)
+        else:
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', requirements, '-t', path, '--ignore-installed'])
 
     def get_info(self, version=1):
         if self.is_layer:

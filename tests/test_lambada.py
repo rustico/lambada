@@ -177,3 +177,6 @@ class TestLambadaLambda(unittest.TestCase):
         self.assertEqual(awslambda_2.name, 'function name test 2')
         missing_values = awslambda_2.validate()
         self.assertEqual(len(missing_values), 3)
+
+    def test_validate_valid_layer(self):
+        pass
