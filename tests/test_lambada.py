@@ -108,6 +108,11 @@ class TestLambadaConfig(unittest.TestCase):
         self.assertEqual(config.lambdas['lambda-test']['environment_variables']['TEST2'], 'child')
         self.assertEqual(config.lambdas['lambda-test-2']['environment_variables']['TEST2'], 'child2')
 
+    def test_environment_variables(self):
+        config = models.Config('config.13.yaml', './tests')
+        lambda_config = config.lambdas['lambda-test']
+        self.assertEqual(config.lambdas['lambda-test']['environment_variables']['DB_HOST'], 'localhost')
+
 
 class TestLambadaService(unittest.TestCase):
     def test_dummy(self):

@@ -82,8 +82,11 @@ class Config():
     def merge_config(self, parent, child):
         for key, val in child.items():
             if isinstance(val, dict):
-                key_values = parent.get(key, {})
-                self.merge_config(key_values, val)
+                if key in parent:
+                    key_values = parent[key]
+                    self.merge_config(key_values, val)
+                else:
+                    parent[key] = val
             elif isinstance(val, list):
                 if key in parent:
                     parent[key] += val
