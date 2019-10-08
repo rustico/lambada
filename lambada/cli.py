@@ -23,13 +23,40 @@ def _get_lambda_config(name, config):
     is_layer = False
     if name == '':
         if len(config.lambdas) == 1:
-            lambda_config = list(config.lambdas.values())[0]
-        elif len(config.layers) == 1:
+            lambdas_configs = list(config.lambdas.values())
+            lambda_config = lambdas_configs[0]
+        elif len(config.layers) == 1 and len(config.lambdas) == 0:
             lambda_config = list(config.layers.values())[0]
             is_layer = True
         else:
-            print('More than one Lambda/Layer. You need to specify which with the `-n` option')
-            exit(1)
+            click.echo('- Lambdas -')
+            for i, name in enumerate(config.lambdas.keys()):
+                click.echo('{}){}'.format(i, name))
+            
+            click.echo('- Layers -')
+            from_ = ord('a')
+            for i, name in enumerate(config.layers.keys()):
+                click.echo('{}){}'.format(chr(i + from_), name))
+
+            value = click.prompt('More than one Lambda/Layer. Please select which')
+            if value.isalpha():
+                number = ord(value)
+                if number < 0 or number > len(config.layers):
+                    click.echo('Layer doesn\'t exists')
+                    exit(1)
+
+                pos = number - from_ + len(config.lambdas)
+                lambda_config = list(config.layers.values())[pos]
+                is_layer = True
+            else:
+                value = int(value)
+                if value < 0 or value > len(config.lambdas):
+                    click.echo('Lambda doesn\'t exists')
+                    exit(1)
+
+                lambdas_configs = list(config.lambdas.values())
+                lambda_config = lambdas_configs[value]
+
     else:
         if name in config.lambdas:
             lambda_config = config.lambdas[name]
