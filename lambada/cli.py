@@ -78,7 +78,7 @@ def init(name):
 @cli.command()
 @click.option('-n', '--name', default='', help='Lambda name')
 @click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
-@click.option('-e', '--env', 'env_vars', default=[])
+@click.option('-e', '--env', 'env_vars', multiple=True)
 def run(name, config_file, env_vars):
     config = models.Config(config_file)
     lambda_config, is_layer = _get_lambda_config(name, config)
