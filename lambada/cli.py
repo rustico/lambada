@@ -151,13 +151,21 @@ def build(name, config_file):
 @click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
 def deploy(name, config_file):
     if name is None:
-        doyouwant = input('Do you want to deploy all lambdas/layers? [no]: ')
+        doyouwant = input('Do you want to deploy all lambdas/layers? [NO]: ')
         if doyouwant is None or doyouwant.lower() not in ('yes', 'y'):
             print('Not deploying. Confirmation answers: yes, y')
             return
 
         config = models.Config(config_file)
         deployed = []
+        for layer_name in config.layers.keys():
+            print(layer_name)
+            awslambda = __get_awslambda(layer_name, config_file)
+            zip_file = awslambda.build()
+            response = awslambda.deploy(zip_file)
+            print(response)
+            deployed.append(layer_name)
+
         for lambda_name in config.lambdas.keys():
             print(lambda_name)
             awslambda = __get_awslambda(lambda_name, config_file)
@@ -166,13 +174,6 @@ def deploy(name, config_file):
             print(response)
             deployed.append(lambda_name)
 
-        for layer_name in config.layers.keys():
-            print(layer_name)
-            awslambda = __get_awslambda(layer_name, config_file)
-            zip_file = awslambda.build()
-            response = awslambda.deploy(zip_file)
-            print(response)
-            deployed.append(layer_name)
 
         print('Deployed', deployed)
     else:
