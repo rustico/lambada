@@ -32,7 +32,7 @@ def _get_lambda_config(name, config):
             click.echo('- Lambdas -')
             for i, name in enumerate(config.lambdas.keys()):
                 click.echo('{}){}'.format(i, name))
-            
+
             click.echo('- Layers -')
             from_ = ord('a')
             for i, name in enumerate(config.layers.keys()):
@@ -151,6 +151,11 @@ def build(name, config_file):
 @click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
 def deploy(name, config_file):
     if name is None:
+        doyouwant = input('Do you want to deploy all lambdas/layers? [no]: ')
+        if doyouwant is None or doyouwant.lower() not in ('yes', 'y'):
+            print('Not deploying. Confirmation answers: yes, y')
+            return
+
         config = models.Config(config_file)
         deployed = []
         for lambda_name in config.lambdas.keys():
