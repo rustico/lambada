@@ -1,4 +1,4 @@
-# Lambada (Beta)
+# Lambada (Alpha)
 A simple way to work with AWS Lambda projects in Python. Heavily inspired and copied from https://github.com/nficano/python-lambda
 
 # Installation
@@ -28,6 +28,8 @@ $ lambada run
 $ lambada run  -n lambda-name
 ```
 
+If there is more than one `lambda` it shows options from where to chose.
+
 ### Invoke remotely
 ```
 $ lambada invoke
@@ -36,7 +38,7 @@ $ lambada invoke -n lambda-name
 
 ### Deploy lambdas and layers
 ```
-$ lambada deploy (deploys all)
+$ lambada deploy (deploy all)
 $ lambada deploy -n name
 $ lambada deploy -c config.qa.yaml
 $ lambada deploy -c config.prod.yaml

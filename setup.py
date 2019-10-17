@@ -14,7 +14,7 @@ setup(
     author="Nicolas Bases",
     author_email='nmbases@protonmail.com',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
@@ -40,6 +40,6 @@ setup(
     packages=find_packages(include=['lambada']),
     test_suite='tests',
     url='https://github.com/rustico/lambada',
-    version='0.2.5',
+    version='0.2.6',
     python_requires='>=3.6',
 )

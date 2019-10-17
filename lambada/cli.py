@@ -78,7 +78,7 @@ def __get_awslambda(name, config_file):
     missing_values = awslambda.validate()
     if len(missing_values) == 0:
         return awslambda
-    
+
     print('Missing required missing fields:', *missing_values)
     exit(1)
 
@@ -88,7 +88,7 @@ def cli():
     pass
 
 
-@cli.command()
+@cli.command(help='Create basic project structure')
 @click.option('-n', '--name', 'name', help='Lambda name')
 def init(name):
     templates_path = os.path.join(
@@ -102,7 +102,7 @@ def init(name):
     print('Tip: add `config.yaml` to the .gitignore file')
 
 
-@cli.command()
+@cli.command(help='Run lambda locally')
 @click.option('-n', '--name', default='', help='Lambda name')
 @click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
 @click.option('-e', '--env', 'env_vars', multiple=True)
@@ -119,7 +119,7 @@ def run(name, config_file, env_vars):
     awslambda.run(env_vars_users)
 
 
-@cli.command()
+@cli.command(help='Invoke lambda remotely')
 @click.argument('name')
 @click.option('-n', '--name', default='', help='Lambda name')
 @click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
@@ -130,7 +130,7 @@ def invoke(name, config_file):
     print('Response Payload', response['Payload'].read())
 
 
-@cli.command()
+@cli.command(help='Build lambda/layer locally')
 @click.argument('name')
 @click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
 def build(name, config_file):
@@ -146,7 +146,7 @@ def build(name, config_file):
     awslambda.build()
 
 
-@cli.command()
+@cli.command(help='Deploy lambda/layer')
 @click.option('-n', '--name', default=None, help='Lambda name')
 @click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
 def deploy(name, config_file):
@@ -174,7 +174,6 @@ def deploy(name, config_file):
             print(response)
             deployed.append(lambda_name)
 
-
         print('Deployed', deployed)
     else:
         awslambda = __get_awslambda(name, config_file)
@@ -188,7 +187,7 @@ def deploy(name, config_file):
         print(response)
 
 
-@cli.command()
+@cli.command(help='Get information about Lambda/Layer from AWS')
 @click.argument('name')
 @click.option('-v', '--version', 'version', help='Version')
 @click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
@@ -200,7 +199,7 @@ def info(name, version, config_file):
     print('CodeSize', arn)
 
 
-@cli.command()
+@cli.command(help='Update lambda configuration')
 @click.argument('name')
 @click.option('-c', '--config', 'config_file', help='Configuration file', default='config.yaml')
 def update_config(name, config_file):
