@@ -36,7 +36,7 @@ setup(
     long_description_content_type="text/markdown",
     include_package_data=True,
     keywords='lambada',
-    name='lambada',
+    name='lambada-again',
     packages=find_packages(include=['lambada']),
     test_suite='tests',
     url='https://github.com/rustico/lambada',

@@ -3,7 +3,7 @@ A simple way to work with AWS Lambda projects in Python. Heavily inspired and co
 
 # Installation
 ```
-$ pip install -i https://test.pypi.org/simple/ lambada
+$ pip install lambada-again
 ```
 
 # Basic Usage
