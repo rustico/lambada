@@ -206,19 +206,19 @@ $ lambada deploy -c config.file.yaml
 ```
 
 ### Configuration
-These values are required in the configuration file
-
 ```
-name: lambda-function-name
-description: Description
-region: us-east-1
-main_file: service.py
-handler: handler
-runtime: python3.6
-role: lambda_basic_execution
-
 aws_access_key_id: access_key_id
 aws_secret_access_key: secret_access_key
+
+lambdas:
+  lambda-test:
+    name: lambda-function-name
+    description: Description
+    region: us-east-1
+    main_file: service.py
+    handler: handler
+    runtime: python3.6
+    role: lambda_basic_execution
 ```
 
 #### Default values
@@ -227,6 +227,7 @@ main_file: service.py
 handler: handler
 runtime: python3.6
 role: lambda_basic_execution
+path: '.'
 ```
 
 #### Environment variables
@@ -276,7 +277,7 @@ $ lambada update_config -n lambda-name
 ```
 
 ### Configuration file example
-```
+  ```
 $ cat config.base.yaml
 lambdas:
   base:
@@ -356,21 +357,20 @@ layers:
 The main difference is the `is_layer` propertiy is set to `true`.
 
 ```
-name: layer_name
-description: Description
-is_layer: true
-region: us-east-1
-main_file: service.py
-handler: handler
-runtime: python3.6
-
-requirements: requirements.txt
-files:
-  - utils.py
-
-directories: 
-  - lib
-
 aws_access_key_id: access_key_id
 aws_secret_access_key: secret_access_key
+
+layers:
+  layer-1:
+    name: layer_name
+    description: Description
+    is_layer: true
+    region: us-east-1
+
+    requirements: requirements.txt
+    files:
+      - utils.py
+
+    directories: 
+      - lib
 ```

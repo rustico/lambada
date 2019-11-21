@@ -96,6 +96,8 @@ def init(name):
     )
 
     for filename in os.listdir(templates_path):
+        if filename == '__pycache__':
+            continue
         dest_path = os.path.join(templates_path, filename)
         copy(dest_path, '.')
 
